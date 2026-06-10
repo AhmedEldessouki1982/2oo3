@@ -1,0 +1,7 @@
+# Temporary ownership until product and engineering leads are assigned.
+* @2oo3/engineering
+
+/docs/ @2oo3/product @2oo3/engineering
+/frontend/ @2oo3/frontend
+/backend/ @2oo3/backend
+/shared/ @2oo3/engineering
