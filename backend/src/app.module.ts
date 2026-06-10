@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
 
+import { AttachmentsModule } from './attachments/attachments.module'
 import { AuthModule } from './auth/auth.module'
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard'
 import { AppController } from './app.controller'
@@ -24,6 +25,7 @@ import { StreamingModule } from './streaming/streaming.module'
     ProvidersModule,
     ComparisonModule,
     StreamingModule,
+    AttachmentsModule,
   ],
   providers: [
     AppService,

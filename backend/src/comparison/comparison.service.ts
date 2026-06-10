@@ -23,6 +23,20 @@ interface ComparisonOutput {
   nextInvestigations: ComparisonSection[]
 }
 
+const STOP_WORDS = new Set([
+  'the', 'and', 'for', 'are', 'was', 'but', 'not', 'you', 'all', 'can',
+  'had', 'her', 'his', 'its', 'out', 'set', 'she', 'two', 'way', 'who',
+  'has', 'own', 'may', 'any', 'how', 'now', 'our', 'see', 'too',
+  'use', 'did', 'get', 'new', 'one', 'say', 'try', 'put', 'let',
+  'this', 'that', 'with', 'from', 'have', 'will', 'each', 'been',
+  'some', 'them', 'than', 'then', 'what', 'when', 'where', 'which',
+  'also', 'into', 'more', 'much', 'such', 'only', 'other', 'about',
+  'above', 'after', 'again', 'being', 'could', 'does', 'down', 'here',
+  'just', 'like', 'long', 'make', 'over', 'same', 'still', 'their',
+  'there', 'they', 'very', 'were', 'would', 'should', 'while',
+  'during', 'before', 'after', 'every', 'well',
+])
+
 const RISK_KEYWORDS = [
   'risk', 'safety', 'hazard', 'danger', 'failure', 'damage', 'injury',
   'critical', 'severe', 'incident', 'accident', 'catastrophic',
@@ -249,6 +263,46 @@ export class ComparisonService {
       }
     }
 
+    const pairedSet = new Set<string>()
+    for (let i = 0; i < allStatements.length; i++) {
+      if (paired.has(`${i}`)) pairedSet.add(`${i}`)
+    }
+
+    const unpaired: Array<{ index: number; statement: ParsedStatement; provider: Provider }> = []
+    for (let i = 0; i < allStatements.length; i++) {
+      if (!pairedSet.has(`${i}`) && !allTracked.has(`${i}`)) {
+        unpaired.push({ index: i, statement: allStatements[i].statement, provider: allStatements[i].provider })
+      }
+    }
+
+    for (let a = 0; a < unpaired.length; a++) {
+      for (let b = a + 1; b < unpaired.length; b++) {
+        if (unpaired[a].provider === unpaired[b].provider) continue
+
+        const sim = this.jaccardSimilarity(
+          unpaired[a].statement.tokens,
+          unpaired[b].statement.tokens,
+        )
+
+        if (sim >= 0.12) {
+          const i = unpaired[a].index
+          const j = unpaired[b].index
+          if (allTracked.has(`${i}`) || allTracked.has(`${j}`)) continue
+
+          disagreements.push({
+            title: `Conflicting views on ${this.extractTopic(unpaired[a].statement.text, unpaired[b].statement.text)}`,
+            findings: [
+              this.stripLabel(unpaired[a].statement.text),
+              this.stripLabel(unpaired[b].statement.text),
+            ],
+          })
+
+          allTracked.add(`${i}`)
+          allTracked.add(`${j}`)
+        }
+      }
+    }
+
     for (let i = 0; i < allStatements.length; i++) {
       if (paired.has(`${i}`) || allTracked.has(`${i}`)) continue
       const { statement: si, provider: pi } = allStatements[i]
@@ -320,6 +374,23 @@ export class ComparisonService {
 
   private stripLabel(text: string): string {
     return text.replace(/^\d+[.)]\s*/, '').trim()
+  }
+
+  private extractTopic(textA: string, textB: string): string {
+    const wordsA = new Set(
+      textA.toLowerCase().split(' ').filter((w) => w.length > 2 && !STOP_WORDS.has(w)),
+    )
+    const wordsB = new Set(
+      textB.toLowerCase().split(' ').filter((w) => w.length > 2 && !STOP_WORDS.has(w)),
+    )
+    const common: string[] = []
+    for (const word of wordsA) {
+      if (wordsB.has(word)) common.push(word)
+    }
+    if (common.length > 0) {
+      return common.slice(0, 3).join(', ')
+    }
+    return 'related topics'
   }
 
   private makeTitle(details: string[]): string {

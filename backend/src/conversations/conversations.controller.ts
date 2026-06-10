@@ -8,12 +8,14 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 import { ConversationsService } from './conversations.service'
 import { CreateConversationDto } from './dto/create-conversation.dto'
+import { ListConversationsQueryDto } from './dto/list-conversations-query.dto'
 import { UpdateConversationDto } from './dto/update-conversation.dto'
 
 @ApiBearerAuth()
@@ -32,8 +34,11 @@ export class ConversationsController {
   }
 
   @Get()
-  findAll(@CurrentUser('sub') userId: string) {
-    return this.conversationsService.findAll(userId)
+  findAll(
+    @CurrentUser('sub') userId: string,
+    @Query() query: ListConversationsQueryDto,
+  ) {
+    return this.conversationsService.findAll(userId, query)
   }
 
   @Get(':id')

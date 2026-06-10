@@ -54,11 +54,13 @@ describe('ComparisonService', () => {
       expect(mockPrisma.comparisonResult.upsert).not.toHaveBeenCalled()
     })
 
-    it('persists comparison with agreements and classifications', async () => {
-      const openaiContent = `1. **Risk**: Proceeding without permissive checks is dangerous.
-2. **Check**: Hold first fire until loop checks complete.`
-      const anthropicContent = `1. **Risk**: Unresolved loop checks are a safety hazard.
-2. **Check**: Review punch list before energization.`
+    it('persists comparison with agreements, disagreements, risks, and investigations', async () => {
+      const openaiContent = `1. **Risk**: Proceeding without permissive checks is a critical safety hazard.
+2. **Permissive**: All protection relays and permissive devices require complete validation.
+3. **Check**: Hold first fire until loop checks complete.`
+      const anthropicContent = `1. **Risk**: Unresolved punch list items remain open before commissioning.
+2. **Permissive**: Protection relay validation is essential before proceeding.
+3. **Check**: Review punch list before energization.`
 
       mockPrisma.providerResponse.findMany.mockResolvedValue([
         { provider: 'OPENAI', content: openaiContent },
@@ -90,8 +92,15 @@ describe('ComparisonService', () => {
       const createData = mockPrisma.comparisonResult.upsert.mock.calls[0][0].create
 
       expect(createData.agreements).toBeDefined()
+      expect(createData.disagreements).toBeDefined()
       expect(createData.risks).toBeDefined()
       expect(createData.nextInvestigations).toBeDefined()
+
+      const disagreements = createData.disagreements as Array<{ title: string; findings: string[] }>
+      expect(disagreements.length).toBeGreaterThanOrEqual(1)
+      expect(disagreements[0].title).toMatch(/^Conflicting views on /)
+      expect(disagreements[0].findings.length).toBeGreaterThanOrEqual(2)
+      expect(disagreements[0].findings[0]).not.toEqual(disagreements[0].findings[1])
 
       const risks = createData.risks as Array<{ title: string; findings: string[]; severity?: string }>
       expect(risks.length).toBeGreaterThanOrEqual(1)
@@ -101,7 +110,7 @@ describe('ComparisonService', () => {
 
       const investigations = createData.nextInvestigations as Array<{ title: string; findings: string[] }>
       expect(investigations.length).toBeGreaterThanOrEqual(1)
-      expect(investigations.some((i) => i.findings[0]?.includes('loop checks'))).toBe(true)
+      expect(investigations.some((i) => i.findings[0]?.includes('validation'))).toBe(true)
 
       expect(result).toBeDefined()
     })

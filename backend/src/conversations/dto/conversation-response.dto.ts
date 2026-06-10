@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export class ConversationSummaryDto {
   @ApiProperty()
@@ -8,7 +8,13 @@ export class ConversationSummaryDto {
   title!: string
 
   @ApiProperty()
+  type!: string
+
+  @ApiProperty()
   status!: string
+
+  @ApiPropertyOptional()
+  lastCompressedAt?: string | null
 
   @ApiProperty()
   createdAt!: string
@@ -26,6 +32,9 @@ export class MessageBriefDto {
 
   @ApiProperty()
   content!: string
+
+  @ApiProperty()
+  compressed!: boolean
 
   @ApiProperty()
   createdAt!: string
@@ -49,7 +58,16 @@ export class ConversationDetailDto {
   title!: string
 
   @ApiProperty()
+  type!: string
+
+  @ApiProperty()
   status!: string
+
+  @ApiPropertyOptional()
+  contextSummary?: string | null
+
+  @ApiPropertyOptional()
+  lastCompressedAt?: string | null
 
   @ApiProperty()
   createdAt!: string

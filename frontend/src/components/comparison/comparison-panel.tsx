@@ -100,7 +100,7 @@ function SectionCard({
         {section.findings.map((finding, i) => (
           <div
             key={i}
-            className={`rounded-lg px-3 py-2 text-sm text-zinc-300 ${severityClass(section.severity)}`}
+            className={`rounded-lg px-3 py-2 text-sm text-card-foreground ${severityClass(section.severity)}`}
           >
             {finding}
           </div>
@@ -181,8 +181,8 @@ export function ComparisonPanel({ result, loading, mode }: ComparisonPanelProps)
         initial={{ opacity: 0, y: 12 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="flex items-center gap-2 border-b border-zinc-800 pb-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+        <div className="flex items-center gap-2 border-b border-border pb-2">
+          <span className="text-xs font-semibold uppercase tracking-wider text-subtle">
             Comparison Analysis
           </span>
         </div>

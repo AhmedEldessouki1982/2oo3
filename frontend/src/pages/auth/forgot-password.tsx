@@ -36,10 +36,10 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <Card className="border-white/10 bg-white/[0.04] shadow-2xl shadow-emerald-950/30 backdrop-blur-xl">
+    <Card className="border-glass-border bg-glass shadow-2xl shadow-emerald-950/30 backdrop-blur-xl">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Reset your password</CardTitle>
-        <p className="mt-2 text-sm text-zinc-400">
+        <p className="mt-2 text-sm text-muted-foreground">
           Enter your email and we'll send instructions
         </p>
       </CardHeader>
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
           </form>
         )}
 
-        <div className="mt-6 text-center text-sm text-zinc-500">
+        <div className="mt-6 text-center text-sm text-subtle">
           Remember your password?{' '}
           <Link className="text-emerald-300 hover:text-emerald-200" to="/login">
             Sign in

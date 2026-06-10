@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
-      className={cn('rounded-3xl border border-zinc-800 bg-zinc-900', className)}
+      className={cn('rounded-3xl border border-border bg-card', className)}
       ref={ref}
       {...props}
     />
@@ -26,7 +26,7 @@ const CardTitle = React.forwardRef<
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
   <h3
-    className={cn('font-semibold leading-none tracking-tight text-zinc-50', className)}
+    className={cn('font-semibold leading-none tracking-tight text-foreground', className)}
     ref={ref}
     {...props}
   />

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
-import { MessageSquare, Plus, Trash2 } from 'lucide-react'
+import { MessageSquare, Plus, Sparkles, Trash2 } from 'lucide-react'
 
 import { cn } from '@/lib/utils'
 import type { ConversationSummary } from '@/lib/api'
@@ -19,7 +19,7 @@ export function ConversationList({ conversations, onNew, onDelete, loading }: Co
     <div className="flex h-full flex-col">
       <div className="px-4 py-3">
         <button
-          className="flex w-full items-center gap-2 rounded-xl border border-dashed border-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-400 transition-all hover:border-emerald-500/50 hover:text-emerald-300"
+          className="flex w-full items-center gap-2 rounded-xl border border-dashed border-muted px-4 py-2.5 text-sm font-medium text-muted-foreground transition-all hover:border-emerald-500/50 hover:text-emerald-300"
           onClick={onNew}
         >
           <Plus className="h-4 w-4" />
@@ -42,8 +42,8 @@ export function ConversationList({ conversations, onNew, onDelete, loading }: Co
             </div>
           </div>
         ) : conversations.length === 0 ? (
-          <p className="px-3 py-6 text-center text-xs text-zinc-600">
-            No investigations yet.
+          <p className="px-3 py-6 text-center text-xs text-subtle">
+            No conversations yet.
             <br />
             Create one to start.
           </p>
@@ -57,15 +57,24 @@ export function ConversationList({ conversations, onNew, onDelete, loading }: Co
                     'flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm transition-all',
                     isActive
                       ? 'bg-emerald-400/10 text-emerald-300'
-                      : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-200',
+                      : 'text-muted-foreground hover:bg-muted/50 hover:text-card-foreground',
                   )}
                   to={`/app/conversations/${conv.id}`}
                 >
-                  <MessageSquare className="h-4 w-4 shrink-0" />
+                  {conv.type === 'GENERAL' ? (
+                    <Sparkles className="h-4 w-4 shrink-0 text-cyan-400" />
+                  ) : (
+                    <MessageSquare className="h-4 w-4 shrink-0" />
+                  )}
                   <span className="truncate">{conv.title}</span>
+                  {conv.type === 'GENERAL' && (
+                    <span className="ml-auto shrink-0 rounded-full border border-cyan-400/20 bg-cyan-400/10 px-1.5 py-0.5 text-[10px] text-cyan-400">
+                      Chat
+                    </span>
+                  )}
                 </Link>
                 <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-zinc-600 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-1 text-subtle opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 group-hover:opacity-100"
                   onClick={() => onDelete(conv.id)}
                   title="Delete conversation"
                 >

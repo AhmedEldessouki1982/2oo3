@@ -67,10 +67,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <Card className="border-white/10 bg-white/[0.04] shadow-2xl shadow-emerald-950/30 backdrop-blur-xl">
+    <Card className="border-glass-border bg-glass shadow-2xl shadow-emerald-950/30 backdrop-blur-xl">
       <CardHeader className="text-center">
         <CardTitle className="text-2xl">Create your account</CardTitle>
-        <p className="mt-2 text-sm text-zinc-400">
+        <p className="mt-2 text-sm text-muted-foreground">
           Join the commissioning investigation workspace
         </p>
       </CardHeader>
@@ -111,7 +111,7 @@ export default function RegisterPage() {
                 {...register('password')}
               />
               <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-subtle hover:text-muted-foreground"
                 onClick={() => setShowPassword(!showPassword)}
                 tabIndex={-1}
                 type="button"
@@ -148,7 +148,7 @@ export default function RegisterPage() {
           </Button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-zinc-500">
+        <div className="mt-6 text-center text-sm text-subtle">
           Already have an account?{' '}
           <Link className="text-emerald-300 hover:text-emerald-200" to="/login">
             Sign in

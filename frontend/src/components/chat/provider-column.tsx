@@ -1,23 +1,56 @@
 import { motion } from 'framer-motion'
 
-const providerThemes: Record<string, { accent: string; bg: string; border: string; text: string }> = {
+function OpenAIIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" fill="#10b981" r="10" />
+      <path d="M8 12l3 3 5-5" stroke="#fff" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+function ClaudeIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+      <rect height="20" rx="4" stroke="#a78bfa" strokeWidth="1.5" width="20" x="2" y="2" />
+      <path d="M9 16l3-8 3 8" stroke="#a78bfa" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+      <path d="M10 14h4" stroke="#a78bfa" strokeLinecap="round" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
+function GeminiIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+      <path
+        d="M12 2l2.5 7.5L22 12l-7.5 2.5L12 22l-2.5-7.5L2 12l7.5-2.5L12 2z"
+        fill="#60a5fa"
+      />
+    </svg>
+  )
+}
+
+const providerThemes: Record<string, { accent: string; bg: string; border: string; text: string; icon: React.ReactNode }> = {
   OPENAI: {
     accent: 'from-emerald-400 to-emerald-500',
     bg: 'bg-emerald-500/5',
     border: 'border-emerald-500/20',
     text: 'text-emerald-300',
+    icon: <OpenAIIcon />,
   },
   ANTHROPIC: {
     accent: 'from-violet-400 to-violet-500',
     bg: 'bg-violet-500/5',
     border: 'border-violet-500/20',
     text: 'text-violet-300',
+    icon: <ClaudeIcon />,
   },
   GOOGLE: {
     accent: 'from-blue-400 to-blue-500',
     bg: 'bg-blue-500/5',
     border: 'border-blue-500/20',
     text: 'text-blue-300',
+    icon: <GeminiIcon />,
   },
 }
 
@@ -53,6 +86,7 @@ export function ProviderColumn({ response }: ProviderColumnProps) {
     >
       <div className={`flex items-center justify-between border-b ${theme.border} px-4 py-3`}>
         <div className="flex items-center gap-2">
+          <div className="shrink-0">{theme.icon}</div>
           <div className={`h-2 w-2 rounded-full ${
             response.status === 'COMPLETED' ? 'bg-green-400' :
             response.status === 'FAILED' ? 'bg-red-400' :
@@ -61,7 +95,7 @@ export function ProviderColumn({ response }: ProviderColumnProps) {
           }`} />
           <span className={`text-sm font-semibold ${theme.text}`}>{label}</span>
         </div>
-        <span className="text-xs text-zinc-500">
+            <span className="text-xs text-subtle">
           {response.status === 'COMPLETED' && response.latencyMs
             ? `${(response.latencyMs / 1000).toFixed(1)}s`
             : response.status === 'FAILED'
@@ -82,7 +116,7 @@ export function ProviderColumn({ response }: ProviderColumnProps) {
             </div>
             <p className="text-sm text-red-400">Provider error</p>
             {response.errorSummary && (
-              <p className="max-w-xs text-xs text-zinc-500">{response.errorSummary}</p>
+              <p className="max-w-xs text-xs text-subtle">{response.errorSummary}</p>
             )}
           </div>
         ) : response.status === 'PENDING' ? (
@@ -102,12 +136,12 @@ export function ProviderColumn({ response }: ProviderColumnProps) {
           <div className="prose prose-invert prose-sm max-w-none">
             {response.content ? (
               response.content.split('\n').map((line, i) => (
-                <p key={i} className={line.startsWith('>') ? 'text-zinc-500 italic' : 'text-zinc-200'}>
+                <p key={i} className={line.startsWith('>') ? 'text-subtle italic' : 'text-card-foreground'}>
                   {line}
                 </p>
               ))
             ) : (
-              <span className="text-zinc-500 italic">Empty response</span>
+              <span className="text-subtle italic">Empty response</span>
             )}
           </div>
         )}

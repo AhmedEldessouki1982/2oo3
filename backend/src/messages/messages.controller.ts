@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 
+import { AttachmentsService } from '../attachments/attachments.service'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 import { ProviderOrchestratorService } from '../providers/provider-orchestrator.service'
 import { SendMessageDto } from './dto/send-message.dto'
@@ -21,6 +22,7 @@ export class MessagesController {
   constructor(
     private readonly messagesService: MessagesService,
     private readonly orchestrator: ProviderOrchestratorService,
+    private readonly attachmentsService: AttachmentsService,
   ) {}
 
   @Post()
@@ -35,6 +37,10 @@ export class MessagesController {
       userId,
       dto.content,
     )
+
+    if (dto.attachmentIds?.length) {
+      await this.attachmentsService.linkToMessage(dto.attachmentIds, result.message.id)
+    }
 
     const dispatches = result.providerResponses.map((r) => ({
       providerResponseId: r.id,

@@ -21,7 +21,7 @@ const buttonVariants = cva(
         default:
           'bg-gradient-to-r from-emerald-500 to-cyan-500 text-white shadow-lg shadow-emerald-500/20 hover:-translate-y-0.5 hover:from-emerald-400 hover:to-cyan-400 hover:shadow-emerald-500/35',
         secondary:
-          'border border-white/10 bg-white/5 text-zinc-100 hover:-translate-y-0.5 hover:bg-white/10',
+          'border border-glass-border bg-glass text-foreground hover:-translate-y-0.5 hover:bg-card',
       },
     },
   },

@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 
 import { PrismaService } from '../prisma/prisma.service'
 import { CreateConversationDto } from './dto/create-conversation.dto'
+import { ListConversationsQueryDto } from './dto/list-conversations-query.dto'
 import { UpdateConversationDto } from './dto/update-conversation.dto'
 
 @Injectable()
@@ -14,6 +15,7 @@ export class ConversationsService {
     const conversation = await this.prisma.conversation.create({
       data: {
         title: dto.title,
+        type: dto.type ?? 'COMMISSIONING',
         contextSummary: dto.contextSummary ?? null,
         userId,
       },
@@ -21,12 +23,35 @@ export class ConversationsService {
     return this.toSummary(conversation)
   }
 
-  async findAll(userId: string) {
-    const conversations = await this.prisma.conversation.findMany({
-      where: { userId },
-      orderBy: { updatedAt: 'desc' },
-    })
-    return conversations.map((c) => this.toSummary(c))
+  async findAll(userId: string, query?: ListConversationsQueryDto) {
+    const page = query?.page ?? 1
+    const limit = query?.limit ?? 20
+    const skip = (page - 1) * limit
+    const search = query?.search?.trim()
+
+    const where: Record<string, unknown> = { userId }
+
+    if (search) {
+      where.title = { contains: search, mode: 'insensitive' }
+    }
+
+    const [conversations, total] = await Promise.all([
+      this.prisma.conversation.findMany({
+        where,
+        orderBy: { updatedAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.conversation.count({ where }),
+    ])
+
+    return {
+      items: conversations.map((c) => this.toSummary(c)),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   }
 
   async findOne(userId: string, id: string) {
@@ -76,14 +101,18 @@ export class ConversationsService {
   private toSummary(conversation: {
     id: string
     title: string
+    type: string
     status: string
+    lastCompressedAt: Date | null
     createdAt: Date
     updatedAt: Date
   }) {
     return {
       id: conversation.id,
       title: conversation.title,
+      type: conversation.type,
       status: conversation.status,
+      lastCompressedAt: conversation.lastCompressedAt?.toISOString() ?? null,
       createdAt: conversation.createdAt.toISOString(),
       updatedAt: conversation.updatedAt.toISOString(),
     }
@@ -92,13 +121,17 @@ export class ConversationsService {
   private toDetail(conversation: {
     id: string
     title: string
+    type: string
     status: string
+    contextSummary: string | null
+    lastCompressedAt: Date | null
     createdAt: Date
     updatedAt: Date
     messages: Array<{
       id: string
       role: string
       content: string
+      compressed: boolean
       createdAt: Date
       providerResponses: Array<{
         id: string
@@ -113,13 +146,17 @@ export class ConversationsService {
     return {
       id: conversation.id,
       title: conversation.title,
+      type: conversation.type,
       status: conversation.status,
+      contextSummary: conversation.contextSummary,
+      lastCompressedAt: conversation.lastCompressedAt?.toISOString() ?? null,
       createdAt: conversation.createdAt.toISOString(),
       updatedAt: conversation.updatedAt.toISOString(),
       messages: conversation.messages.map((m) => ({
         id: m.id,
         role: m.role,
         content: m.content,
+        compressed: m.compressed,
         createdAt: m.createdAt.toISOString(),
         providerResponses: m.providerResponses.map((r) => ({
           id: r.id,

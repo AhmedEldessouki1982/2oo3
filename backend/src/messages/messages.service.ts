@@ -1,6 +1,7 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { Provider } from '@prisma/client'
 
+import { CompressionService } from '../compression/compression.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { StreamEventService } from '../streaming/stream-event.service'
 
@@ -11,6 +12,7 @@ export class MessagesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly streamEvents: StreamEventService,
+    private readonly compression: CompressionService,
   ) {}
 
   async sendMessage(conversationId: string, userId: string, content: string) {
@@ -34,9 +36,14 @@ export class MessagesService {
       where: { userId, enabled: true },
     })
 
-    const providerNames = enabledProviders.length > 0
+    let providerNames = enabledProviders.length > 0
       ? enabledProviders.map((p) => p.provider)
       : (['OPENAI', 'ANTHROPIC', 'GOOGLE'] as const)
+
+    // GENERAL conversations only use a single provider (the first enabled)
+    if (conversation.type === 'GENERAL') {
+      providerNames = [providerNames[0]]
+    }
 
     const providerResponses = await Promise.all(
       providerNames.map((provider) =>
@@ -51,6 +58,11 @@ export class MessagesService {
         }),
       ),
     )
+
+    // Trigger compression check asynchronously — never block message send
+    this.compression.maybeCompress(conversationId).catch((err) => {
+      this.logger.error(`Background compression failed for ${conversationId}: ${err.message}`)
+    })
 
     return {
       message: {

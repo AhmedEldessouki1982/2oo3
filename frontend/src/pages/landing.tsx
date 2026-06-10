@@ -10,11 +10,13 @@ import {
   LogIn,
   RadioTower,
   ShieldCheck,
+  Sparkles,
   UserPlus,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ThemeToggle } from '@/components/ui/theme-toggle'
 
 const providerPanels = [
   {
@@ -61,26 +63,44 @@ const architectureCards = [
   },
 ]
 
+const chatModes = [
+  {
+    description:
+      'Ask any question and get answers from a single AI model. Perfect for everyday queries, brainstorming, or quick research.',
+    icon: Sparkles,
+    title: 'General AI Chat',
+    cta: 'Chat now',
+  },
+  {
+    description:
+      'Send prompts to ChatGPT, Claude, and Gemini simultaneously. Compare responses, surface disagreements, and uncover hidden risks.',
+    icon: GitCompareArrows,
+    title: 'Commissioning Investigation',
+    cta: 'Investigate',
+  },
+]
+
 export default function LandingPage() {
   return (
-    <main className="min-h-screen overflow-hidden bg-zinc-950 text-zinc-50">
+    <main className="min-h-screen overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute left-1/2 top-[-12rem] h-[32rem] w-[32rem] -translate-x-1/2 rounded-full bg-emerald-500/20 blur-[140px]" />
         <div className="absolute bottom-[-10rem] right-[-8rem] h-[28rem] w-[28rem] rounded-full bg-cyan-500/10 blur-[120px]" />
       </div>
 
       <section className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-8 sm:px-6 lg:px-8">
-        <header className="flex items-center justify-between rounded-full border border-white/10 bg-white/[0.03] px-4 py-3 backdrop-blur-xl">
+        <header className="flex items-center justify-between rounded-full border border-glass-border bg-glass px-4 py-3 backdrop-blur-xl">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-300/25">
               <Bot className="h-5 w-5" />
             </div>
             <div>
               <p className="text-sm font-semibold tracking-wide">2oo3</p>
-              <p className="text-xs text-zinc-500">Commissioning copilot</p>
+              <p className="text-xs text-subtle">Commissioning copilot</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link to="/login">
               <Button className="hidden sm:inline-flex" size="sm" variant="secondary">
                 <LogIn className="h-4 w-4" />
@@ -106,13 +126,13 @@ export default function LandingPage() {
               <CheckCircle2 className="h-3.5 w-3.5" />
               Multi-model investigations
             </div>
-            <h1 className="max-w-4xl text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
+            <h1 className="max-w-4xl text-5xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
               Multi-model confidence for{' '}
               <span className="bg-gradient-to-r from-emerald-300 via-white to-cyan-300 bg-[length:200%_auto] bg-clip-text text-transparent animate-[shimmer_3s_linear_infinite]">
                 commissioning investigations
               </span>
             </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-400">
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
               Analyze problems with ChatGPT, Claude, and Gemini simultaneously.
               Surface agreements, disagreements, and hidden risks — all in one workspace.
             </p>
@@ -138,11 +158,11 @@ export default function LandingPage() {
             initial={{ opacity: 0, scale: 0.96 }}
             transition={{ delay: 0.15, duration: 0.6, ease: 'easeOut' }}
           >
-            <Card className="overflow-hidden border-white/10 bg-white/[0.04] shadow-2xl shadow-emerald-950/30 backdrop-blur-xl">
+            <Card className="overflow-hidden border-glass-border bg-glass shadow-2xl shadow-emerald-950/30 backdrop-blur-xl">
               <CardHeader>
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-zinc-500">
+                    <p className="text-xs uppercase tracking-[0.24em] text-subtle">
                       Provider fan-out preview
                     </p>
                     <CardTitle className="mt-2 text-2xl">
@@ -156,7 +176,7 @@ export default function LandingPage() {
                 {providerPanels.map((panel, index) => (
                   <motion.div
                     animate={{ opacity: 1, x: 0 }}
-                    className="rounded-2xl border border-white/10 bg-zinc-950/60 p-4 transition-all duration-300 hover:border-emerald-300/30 hover:bg-zinc-900/70"
+                    className="rounded-2xl border border-glass-border bg-background/60 p-4 transition-all duration-300 hover:border-emerald-300/30 hover:bg-card/70"
                     initial={{ opacity: 0, x: 20 }}
                     key={panel.name}
                     transition={{ delay: 0.25 + index * 0.08 }}
@@ -164,7 +184,7 @@ export default function LandingPage() {
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="font-semibold">{panel.name}</p>
-                        <p className="mt-1 text-sm text-zinc-500">
+                        <p className="mt-1 text-sm text-subtle">
                           {panel.status}
                         </p>
                       </div>
@@ -190,7 +210,7 @@ export default function LandingPage() {
 
             return (
               <Card
-                className="group border-white/10 bg-white/[0.03] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300/30 hover:bg-white/[0.06]"
+                className="group border-glass-border bg-glass backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300/30 hover:bg-card/40"
                 key={item.title}
               >
                 <CardHeader>
@@ -200,13 +220,53 @@ export default function LandingPage() {
                   <CardTitle>{item.title}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm leading-6 text-zinc-400">
+                  <p className="text-sm leading-6 text-muted-foreground">
                     {item.description}
                   </p>
                 </CardContent>
               </Card>
             )
           })}
+        </motion.div>
+
+        <motion.div
+          animate={{ opacity: 1, y: 0 }}
+          className="pb-16"
+          initial={{ opacity: 0, y: 24 }}
+          transition={{ delay: 0.4, duration: 0.5 }}
+        >
+          <h2 className="mb-8 text-center text-2xl font-bold tracking-tight">
+            Two ways to chat
+          </h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            {chatModes.map((mode) => {
+              const Icon = mode.icon
+              return (
+                <Card
+                  className="group border-glass-border bg-glass backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-emerald-300/30 hover:bg-card/40"
+                  key={mode.title}
+                >
+                  <CardHeader>
+                    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400/10 to-cyan-400/10 text-emerald-300 transition-all duration-300 group-hover:from-emerald-400/20 group-hover:to-cyan-400/20">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <CardTitle>{mode.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="mb-4 text-sm leading-6 text-muted-foreground">
+                      {mode.description}
+                    </p>
+                    <Link to="/register">
+                      <Button size="sm">
+                        {mode.cta}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
         </motion.div>
       </section>
     </main>

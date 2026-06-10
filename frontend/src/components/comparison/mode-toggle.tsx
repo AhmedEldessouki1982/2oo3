@@ -16,21 +16,21 @@ interface ModeToggleProps {
 
 export function ModeToggle({ value, onChange }: ModeToggleProps) {
   return (
-    <div className="flex flex-wrap gap-1.5 rounded-2xl bg-zinc-900/50 p-1 ring-1 ring-zinc-800">
+    <div className="flex flex-wrap gap-1.5 rounded-2xl bg-card/50 p-1 ring-1 ring-border">
       {modes.map((mode) => (
         <button
           key={mode.key}
           className={`relative rounded-xl px-3 py-1.5 text-xs font-medium transition-colors ${
             value === mode.key
-              ? 'text-zinc-100'
-              : 'text-zinc-500 hover:text-zinc-300'
+              ? 'text-foreground'
+              : 'text-subtle hover:text-muted-foreground'
           }`}
           onClick={() => onChange(mode.key)}
           title={mode.description}
         >
           {value === mode.key && (
             <motion.div
-              className="absolute inset-0 rounded-xl bg-zinc-800"
+              className="absolute inset-0 rounded-xl bg-muted"
               layoutId="mode-pill"
               transition={{ duration: 0.2, ease: 'easeOut' }}
             />

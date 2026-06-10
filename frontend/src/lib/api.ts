@@ -166,12 +166,24 @@ export async function getMeApi() {
   return data
 }
 
+export type ConversationType = 'COMMISSIONING' | 'GENERAL'
+
 export interface ConversationSummary {
   id: string
   title: string
+  type: ConversationType
   status: string
+  lastCompressedAt?: string | null
   createdAt: string
   updatedAt: string
+}
+
+export interface PaginatedConversations {
+  items: ConversationSummary[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
 }
 
 export interface ProviderResponseBrief {
@@ -187,6 +199,7 @@ export interface MessageBrief {
   id: string
   role: string
   content: string
+  compressed: boolean
   createdAt: string
   providerResponses: ProviderResponseBrief[]
 }
@@ -194,7 +207,10 @@ export interface MessageBrief {
 export interface ConversationDetail {
   id: string
   title: string
+  type: ConversationType
   status: string
+  contextSummary: string | null
+  lastCompressedAt: string | null
   createdAt: string
   updatedAt: string
   messages: MessageBrief[]
@@ -214,13 +230,13 @@ export interface CreateMessageResult {
   }>
 }
 
-export async function createConversation(title: string) {
-  const { data } = await api.post<ConversationSummary>('/conversations', { title })
+export async function createConversation(title: string, type?: ConversationType) {
+  const { data } = await api.post<ConversationSummary>('/conversations', { title, type })
   return data
 }
 
-export async function listConversations() {
-  const { data } = await api.get<ConversationSummary[]>('/conversations')
+export async function listConversations(params?: { search?: string; page?: number; limit?: number }) {
+  const { data } = await api.get<PaginatedConversations>('/conversations', { params })
   return data
 }
 
@@ -238,10 +254,28 @@ export async function deleteConversation(id: string) {
   await api.delete(`/conversations/${id}`)
 }
 
-export async function sendMessage(conversationId: string, content: string) {
+export async function sendMessage(conversationId: string, content: string, attachmentIds?: string[]) {
   const { data } = await api.post<CreateMessageResult>(
     `/conversations/${conversationId}/messages`,
-    { content },
+    { content, attachmentIds },
+  )
+  return data
+}
+
+export interface AttachmentUploadResult {
+  id: string
+  filename: string
+  mimeType: string
+  sizeBytes: number
+}
+
+export async function uploadAttachment(conversationId: string, file: File) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const { data } = await api.post<AttachmentUploadResult>(
+    `/conversations/${conversationId}/attachments`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
   )
   return data
 }

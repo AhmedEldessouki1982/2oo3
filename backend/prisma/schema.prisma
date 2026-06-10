@@ -19,6 +19,11 @@ enum Provider {
   GOOGLE
 }
 
+enum ConversationType {
+  COMMISSIONING
+  GENERAL
+}
+
 enum ConversationStatus {
   ACTIVE
   ARCHIVED
@@ -89,6 +94,7 @@ model Conversation {
   id                String             @id @default(cuid())
   userId            String             @map("user_id")
   title             String
+  type              ConversationType   @default(COMMISSIONING)
   status            ConversationStatus @default(ACTIVE)
   contextSummary    String?            @map("context_summary") @db.Text
   compressionState  Json?              @map("compression_state")
