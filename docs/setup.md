@@ -86,7 +86,7 @@ Inspect seeded data with Prisma Studio:
 npm run db:studio
 ```
 
-The seed creates a demo commissioning lead, provider credential placeholders for OpenAI/Anthropic/Google, a GT first fire and HRSG steam blow conversation, provider responses, comparison results, and an attachment record.
+The seed creates a demo commissioning lead with password `DemoPass1!`, provider credential placeholders for OpenAI/Anthropic/Google, a GT first fire and HRSG steam blow conversation, provider responses, comparison results, and an attachment record.
 
 For CI and preview environments, use the deploy-safe migration command instead of creating a new local migration:
 
@@ -115,7 +115,8 @@ The backend readiness endpoint remains at `http://localhost:3000/api/healthz`. I
 
 - The backend exposes a scaffold `/api` root endpoint and database-backed `/api/healthz` readiness endpoint.
 - Prisma manages PostgreSQL migrations and development seed data.
-- Auth, provider keys, streaming orchestration, comparison generation, compression, and attachment extraction are represented in architecture/backlog docs and implemented in later milestones.
+- Auth (JWT registration, login, refresh, logout) is implemented at `/api/auth/*`. See `docs/auth.md` for endpoints, credentials, and curl examples.
+- Provider keys, streaming orchestration, comparison generation, compression, and attachment extraction are represented in architecture/backlog docs and implemented in later milestones.
 
 ## Troubleshooting
 

@@ -23,7 +23,7 @@ async function main() {
     data: {
       displayName: 'Nadia Hassan',
       email: demoEmail,
-      passwordHash: null,
+      passwordHash: '$2b$10$vyOQcGCrhfHouozhJ9Eoo.GduFMPeX.qlC/FJPW/di1JHV.N/1epi',
       role: 'LEAD_ENGINEER',
       providerCredentials: {
         create: [

@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common'
 import { ApiOkResponse, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger'
 
+import { Public } from '../auth/decorators/public.decorator'
 import { HealthService } from './health.service'
 
 @ApiTags('Health')
@@ -9,6 +10,7 @@ export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
   @Get()
+  @Public()
   @ApiOkResponse({ description: 'Application readiness status.' })
   @ApiServiceUnavailableResponse({ description: 'Database readiness failed.' })
   check() {

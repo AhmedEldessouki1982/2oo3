@@ -44,6 +44,21 @@ export interface ComparisonResultContract {
   readonly nextInvestigations: readonly ComparisonSection[]
 }
 
+export interface AuthTokens {
+  accessToken: string
+  refreshToken: string
+}
+
+export type UserRole = 'ADMIN' | 'COMMISSIONING_ENGINEER' | 'LEAD_ENGINEER' | 'VIEWER'
+
+export interface AuthUser {
+  id: string
+  email: string
+  displayName: string
+  role: UserRole
+  createdAt: string
+}
+
 export function createContextFingerprint(
   context: readonly SharedContextItem[],
 ): string {

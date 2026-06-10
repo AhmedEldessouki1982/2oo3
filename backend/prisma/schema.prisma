@@ -64,6 +64,7 @@ model User {
   conversations       Conversation[]
   messages            Message[]
   providerCredentials ProviderCredential[]
+  refreshTokens      RefreshToken[]
 
   @@map("users")
 }
@@ -192,4 +193,18 @@ model Attachment {
   @@index([messageId])
   @@index([userId])
   @@map("attachments")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  tokenHash String   @map("token_hash")
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("refresh_tokens")
 }

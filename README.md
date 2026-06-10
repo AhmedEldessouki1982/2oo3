@@ -4,7 +4,7 @@
 
 ## Current Milestone
 
-Milestone 2 connects the NestJS backend to Dockerized PostgreSQL through Prisma, with migrations, seed data, DB-backed health checks, and CI migration coverage.
+Milestone 3 adds JWT authentication — register, login, refresh, logout, and a `/auth/me` endpoint. Demo credentials: `lead.commissioning@example.com` / `DemoPass1!`. See `docs/auth.md`.
 
 ## Quick Start
 
