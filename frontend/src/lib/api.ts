@@ -33,6 +33,20 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+api.interceptors.response.use(
+  (response) => {
+    if (
+      response.data &&
+      typeof response.data === 'object' &&
+      'data' in response.data &&
+      'success' in response.data
+    ) {
+      response.data = response.data.data
+    }
+    return response
+  },
+)
+
 let isRefreshing = false
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let failedQueue: Array<{ resolve: (value: any) => void; reject: (reason: any) => void }> = []
@@ -75,12 +89,13 @@ api.interceptors.response.use(
       }
 
       try {
-        const { data } = await axios.post(`${API_URL}/auth/refresh`, {
+        const response = await axios.post(`${API_URL}/auth/refresh`, {
           refreshToken,
         })
-        setTokens(data.accessToken, data.refreshToken)
-        processQueue(null, data.accessToken)
-        originalRequest.headers.Authorization = `Bearer ${data.accessToken}`
+        const inner = response.data?.data ?? response.data
+        setTokens(inner.accessToken, inner.refreshToken)
+        processQueue(null, inner.accessToken)
+        originalRequest.headers.Authorization = `Bearer ${inner.accessToken}`
         return api(originalRequest)
       } catch (refreshError) {
         processQueue(refreshError, null)
@@ -148,5 +163,118 @@ export async function getMeApi() {
     role: string
     createdAt: string
   }>('/auth/me')
+  return data
+}
+
+export interface ConversationSummary {
+  id: string
+  title: string
+  status: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ProviderResponseBrief {
+  id: string
+  provider: string
+  status: string
+  content: string | null
+  errorSummary: string | null
+  latencyMs: number | null
+}
+
+export interface MessageBrief {
+  id: string
+  role: string
+  content: string
+  createdAt: string
+  providerResponses: ProviderResponseBrief[]
+}
+
+export interface ConversationDetail {
+  id: string
+  title: string
+  status: string
+  createdAt: string
+  updatedAt: string
+  messages: MessageBrief[]
+}
+
+export interface CreateMessageResult {
+  message: {
+    id: string
+    role: string
+    content: string
+    createdAt: string
+  }
+  providerResponses: Array<{
+    id: string
+    provider: string
+    status: string
+  }>
+}
+
+export async function createConversation(title: string) {
+  const { data } = await api.post<ConversationSummary>('/conversations', { title })
+  return data
+}
+
+export async function listConversations() {
+  const { data } = await api.get<ConversationSummary[]>('/conversations')
+  return data
+}
+
+export async function getConversation(id: string) {
+  const { data } = await api.get<ConversationDetail>(`/conversations/${id}`)
+  return data
+}
+
+export async function updateConversation(id: string, title: string) {
+  const { data } = await api.patch<ConversationSummary>(`/conversations/${id}`, { title })
+  return data
+}
+
+export async function deleteConversation(id: string) {
+  await api.delete(`/conversations/${id}`)
+}
+
+export async function sendMessage(conversationId: string, content: string) {
+  const { data } = await api.post<CreateMessageResult>(
+    `/conversations/${conversationId}/messages`,
+    { content },
+  )
+  return data
+}
+
+export async function getMessages(conversationId: string) {
+  const { data } = await api.get<MessageBrief[]>(
+    `/conversations/${conversationId}/messages`,
+  )
+  return data
+}
+
+export interface ComparisonSection {
+  title: string
+  findings: string[]
+  severity?: 'info' | 'warning' | 'critical'
+}
+
+export interface ComparisonResult {
+  id: string
+  status: string
+  agreements: ComparisonSection[]
+  disagreements: ComparisonSection[]
+  uniqueInsights: ComparisonSection[]
+  risks: ComparisonSection[]
+  nextInvestigations: ComparisonSection[]
+  errorSummary: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export async function getComparison(messageId: string) {
+  const { data } = await api.get<ComparisonResult | null>(
+    `/comparison/${messageId}`,
+  )
   return data
 }

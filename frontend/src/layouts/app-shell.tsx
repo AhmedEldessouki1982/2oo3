@@ -1,15 +1,55 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { Bot, LogOut, Menu, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
+import { ConversationList } from '@/components/chat/conversation-list'
 import { useAuth } from '@/contexts/auth-context'
 import { cn } from '@/lib/utils'
+import { createConversation, listConversations, deleteConversation, type ConversationSummary } from '@/lib/api'
 
 export function AppShell() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [conversations, setConversations] = useState<ConversationSummary[]>([])
+  const [loadingConversations, setLoadingConversations] = useState(true)
+
+  const loadConversations = useCallback(async () => {
+    setLoadingConversations(true)
+    try {
+      const data = await listConversations()
+      setConversations(data)
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingConversations(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadConversations()
+  }, [loadConversations])
+
+  async function handleNew() {
+    try {
+      const conv = await createConversation('New investigation')
+      setConversations((prev) => [conv, ...prev])
+      navigate(`/app/conversations/${conv.id}`)
+      setSidebarOpen(false)
+    } catch {
+      // silently fail
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await deleteConversation(id)
+      setConversations((prev) => prev.filter((c) => c.id !== id))
+    } catch {
+      // silently fail
+    }
+  }
 
   async function handleLogout() {
     await logout()
@@ -31,28 +71,28 @@ export function AppShell() {
 
       <aside
         className={cn(
-          'fixed left-0 top-0 z-50 flex h-full w-64 flex-col border-r border-zinc-800 bg-zinc-950 transition-transform duration-300 md:relative md:translate-x-0',
+          'fixed left-0 top-0 z-50 flex h-full w-72 flex-col border-r border-zinc-800 bg-zinc-950 transition-transform duration-300 md:relative md:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
         <div className="flex items-center gap-3 border-b border-zinc-800 px-4 py-4">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-300/25">
-            <Bot className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold tracking-wide">2oo3</p>
-            <p className="text-xs text-zinc-500">Commissioning copilot</p>
-          </div>
+          <Link className="flex items-center gap-3" to="/dashboard">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-300/25">
+              <Bot className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold tracking-wide">2oo3</p>
+              <p className="text-xs text-zinc-500">Commissioning copilot</p>
+            </div>
+          </Link>
         </div>
 
-        <nav className="flex-1 space-y-1 p-4">
-          <Link
-            className="block rounded-xl bg-emerald-400/10 px-4 py-2.5 text-sm font-medium text-emerald-300 transition-all hover:bg-emerald-400/20"
-            to="/dashboard"
-          >
-            Dashboard
-          </Link>
-        </nav>
+        <ConversationList
+          conversations={conversations}
+          loading={loadingConversations}
+          onDelete={handleDelete}
+          onNew={handleNew}
+        />
 
         <div className="border-t border-zinc-800 p-4">
           <div className="mb-3">
@@ -98,7 +138,7 @@ export function AppShell() {
           </div>
         </header>
 
-        <main className="relative flex-1 p-4 md:p-6">
+        <main className="relative flex h-[calc(100vh-57px)] flex-1">
           <Outlet />
         </main>
       </div>

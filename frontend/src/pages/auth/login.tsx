@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/auth-context'
+import { useToast } from '@/contexts/toast-context'
 
 const loginSchema = z.object({
   email: z.string().email('Enter a valid email address'),
@@ -22,9 +23,9 @@ type LoginForm = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
   const { login } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
-  const [generalError, setGeneralError] = useState<string | null>(null)
 
   const {
     register,
@@ -35,18 +36,20 @@ export default function LoginPage() {
   })
 
   async function onSubmit(data: LoginForm) {
-    setGeneralError(null)
     try {
       await login(data.email, data.password)
+      showToast('success', 'Welcome back', 'You have been signed in successfully.')
       navigate('/dashboard')
     } catch (err) {
       const message =
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (err as any)?.response?.data?.message?.message ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (err as any)?.response?.data?.message ||
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (err as any)?.message ||
-        'Login failed. Please try again.'
-      setGeneralError(message)
+        'Invalid email or password. Please try again.'
+      showToast('error', 'Sign in failed', typeof message === 'string' ? message : 'Invalid email or password.')
     }
   }
 
@@ -60,12 +63,6 @@ export default function LoginPage() {
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          {generalError && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {generalError}
-            </div>
-          )}
-
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input

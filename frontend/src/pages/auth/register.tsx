@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Spinner } from '@/components/ui/spinner'
 import { useAuth } from '@/contexts/auth-context'
+import { useToast } from '@/contexts/toast-context'
 
 const registerSchema = z
   .object({
@@ -35,9 +36,9 @@ type RegisterForm = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
   const { register: registerUser } = useAuth()
+  const { showToast } = useToast()
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
-  const [generalError, setGeneralError] = useState<string | null>(null)
 
   const {
     register,
@@ -48,18 +49,20 @@ export default function RegisterPage() {
   })
 
   async function onSubmit(data: RegisterForm) {
-    setGeneralError(null)
     try {
       await registerUser(data.email, data.password, data.displayName)
+      showToast('success', 'Account created', 'Welcome to 2oo3! You are now signed in.')
       navigate('/dashboard')
     } catch (err) {
       const message =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (err as any)?.response?.data?.message?.message ||
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (err as any)?.response?.data?.message ||
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (err as any)?.message ||
         'Registration failed. Please try again.'
-      setGeneralError(message)
+      showToast('error', 'Registration failed', typeof message === 'string' ? message : 'Please check your details and try again.')
     }
   }
 
@@ -73,12 +76,6 @@ export default function RegisterPage() {
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          {generalError && (
-            <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
-              {generalError}
-            </div>
-          )}
-
           <div className="space-y-2">
             <Label htmlFor="displayName">Full name</Label>
             <Input

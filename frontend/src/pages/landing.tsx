@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -6,8 +7,10 @@ import {
   CheckCircle2,
   FileSearch,
   GitCompareArrows,
+  LogIn,
   RadioTower,
   ShieldCheck,
+  UserPlus,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -74,15 +77,23 @@ export default function LandingPage() {
             </div>
             <div>
               <p className="text-sm font-semibold tracking-wide">2oo3</p>
-              <p className="text-xs text-zinc-500">Milestone 1 scaffold</p>
+              <p className="text-xs text-zinc-500">Commissioning copilot</p>
             </div>
           </div>
-          <a
-            className="hidden text-sm text-zinc-400 transition-all duration-300 hover:text-zinc-50 sm:block"
-            href="/docs"
-          >
-            API docs at :3000/docs
-          </a>
+          <div className="flex items-center gap-2">
+            <Link to="/login">
+              <Button className="hidden sm:inline-flex" size="sm" variant="secondary">
+                <LogIn className="h-4 w-4" />
+                Sign in
+              </Button>
+            </Link>
+            <Link to="/register">
+              <Button size="sm">
+                <UserPlus className="h-4 w-4" />
+                Get started
+              </Button>
+            </Link>
+          </div>
         </header>
 
         <div className="grid flex-1 items-center gap-10 py-16 lg:grid-cols-[1fr_0.9fr] lg:py-20">
@@ -93,7 +104,7 @@ export default function LandingPage() {
           >
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-emerald-300">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Architecture alignment
+              Multi-model investigations
             </div>
             <h1 className="max-w-4xl text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl">
               Multi-model confidence for{' '}
@@ -102,18 +113,22 @@ export default function LandingPage() {
               </span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-zinc-400">
-              A production-ready foundation for side-by-side AI analysis,
-              identical shared context, persistent investigations, and
-              structured comparison of engineering blind spots.
+              Analyze problems with ChatGPT, Claude, and Gemini simultaneously.
+              Surface agreements, disagreements, and hidden risks — all in one workspace.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg">
-                Start local scaffold
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button size="lg" variant="secondary">
-                Review architecture
-              </Button>
+              <Link to="/register">
+                <Button size="lg">
+                  Start investigating
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/login">
+                <Button size="lg" variant="secondary">
+                  <LogIn className="h-4 w-4" />
+                  Sign in
+                </Button>
+              </Link>
             </div>
           </motion.div>
 
