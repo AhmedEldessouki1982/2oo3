@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common'
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger'
+import { ApiOkResponse, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger'
 
 import { HealthService } from './health.service'
 
@@ -10,6 +10,7 @@ export class HealthController {
 
   @Get()
   @ApiOkResponse({ description: 'Application readiness status.' })
+  @ApiServiceUnavailableResponse({ description: 'Database readiness failed.' })
   check() {
     return this.healthService.check()
   }

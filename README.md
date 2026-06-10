@@ -4,13 +4,17 @@
 
 ## Current Milestone
 
-Milestone 1 establishes the architecture plan, contribution workflow, CI skeleton, and runnable frontend/backend/shared monorepo scaffold.
+Milestone 2 connects the NestJS backend to Dockerized PostgreSQL through Prisma, with migrations, seed data, DB-backed health checks, and CI migration coverage.
 
 ## Quick Start
 
 ```bash
 nvm use
 npm install
+npm run db:up
+npm run db:migrate
+npm run db:seed
+npm run db:generate
 npm run dev
 ```
 
@@ -20,6 +24,8 @@ Backend API: `http://localhost:3000/api`
 
 Swagger docs: `http://localhost:3000/docs`
 
+Prisma Studio: `npm run db:studio`
+
 ## Verification
 
 ```bash
@@ -27,7 +33,10 @@ npm run lint
 npm run typecheck
 npm test
 npm run build
+npm audit --audit-level=moderate
 ```
+
+`npm audit --audit-level=moderate` currently reports a Prisma CLI transitive `@hono/node-server` advisory; see `docs/setup.md` for the tracking note.
 
 ## Documentation
 

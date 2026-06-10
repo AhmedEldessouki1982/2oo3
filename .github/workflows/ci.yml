@@ -11,6 +11,28 @@ jobs:
   verify:
     name: Lint, Typecheck, Test, Build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: 2oo3
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d 2oo3"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      APP_NAME: 2oo3
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/2oo3?schema=public
+      FRONTEND_URL: http://localhost:5173
+      JWT_SECRET: ci-placeholder-secret-not-for-production
+      NODE_ENV: test
+      PORT: 3000
+      PROVIDER_KEY_ENCRYPTION_SECRET: ci-placeholder-provider-secret
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,11 +40,17 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
           cache: npm
+          node-version-file: .nvmrc
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Apply database migrations
+        run: npm run db:migrate:deploy
 
       - name: Lint
         run: npm run lint
@@ -30,7 +58,7 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Unit tests
+      - name: Test
         run: npm test
 
       - name: Build

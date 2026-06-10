@@ -168,9 +168,9 @@ erDiagram
 ## Delivery Architecture
 
 - Root npm workspaces coordinate `frontend`, `backend`, and `shared` packages.
-- CI installs with `npm ci`, then runs lint, typecheck, tests, and build across workspaces.
+- CI installs with `npm ci`, generates the Prisma client, applies migrations to a Postgres service, then runs lint, typecheck, tests, and build across workspaces.
 - Local development runs both app surfaces with `npm run dev` or `./dev.sh`.
-- Milestone 2 introduces Docker Compose, Prisma migrations, seed data, and database-backed health checks.
+- Docker Compose provides local PostgreSQL; Prisma migrations, seed data, and database-backed health checks own the foundational data layer.
 
 ## Open Decisions
 
