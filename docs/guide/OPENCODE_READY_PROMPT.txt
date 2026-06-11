@@ -1,0 +1,138 @@
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+                          COPY-PASTE THIS ENTIRE TEXT INTO OPENCODE
+                   (Everything below the line until you see THE END)
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+Multi-AI comparison tool with user OAuth authentication and real-time streaming
+
+Build a full-stack app where users authenticate with their own OpenAI, Google, and Anthropic accounts. The app 
+forks user prompts to all three AIs in parallel, streams responses in real-time, compares them, and shows 
+differences/consensus/unique findings from each AI.
+
+ARCHITECTURE:
+
+FRONTEND (React + Vite):
+✓ Auth screen: Three login buttons (OpenAI OAuth, Google OAuth, Anthropic API key paste)
+✓ Each user logs in → backend stores encrypted token
+✓ Chat interface: Single input, all three AIs respond in parallel
+✓ Real-time response display: Three panels showing tokens as they arrive (streaming)
+✓ Comparison panel showing:
+  - ⚠️  Conflicting views (where AIs disagree)
+  - ✅ Consensus points (what all three agree on)
+  - 🟣 Claude unique points
+  - 🟢 ChatGPT unique points
+  - 🔵 Gemini unique points
+
+BACKEND (NestJS):
+✓ OAuth handlers for OpenAI and Google
+✓ API key verification for Anthropic
+✓ Secure token storage: encrypt tokens with AES-256 before storing
+✓ Streaming endpoint: /api/compare/stream (returns Server-Sent Events)
+✓ Streaming logic: 
+  - Gets user's stored tokens (decrypt them)
+  - Calls all three AIs in parallel using user's token
+  - Streams each token as it arrives (token-by-token)
+  - After all three finish, run comparison analysis
+  - Send comparison results to frontend
+✓ Comparison service: Use Claude to analyze differences between the three responses
+✓ No backend API keys needed (users authenticate with their own accounts)
+
+TECH STACK:
+✓ Frontend: React + Vite + TypeScript + Tailwind CSS v4 + shadcn/ui + Lucide
+✓ Backend: NestJS + TypeScript + Passport.js (OAuth) + Prisma + PostgreSQL
+✓ Streaming: Server-Sent Events (SSE) for real-time token delivery
+✓ Encryption: Node.js crypto module (AES-256-CBC)
+✓ API libraries: @anthropic-ai/sdk, openai, @google/generative-ai
+
+CRITICAL FEATURES:
+
+1. AUTHENTICATION:
+   - User clicks "Login with OpenAI" → redirected to OAuth consent
+   - User grants permission → backend receives token
+   - Backend encrypts and stores token (AES-256)
+   - Repeat for Google and Anthropic
+   - All three tokens stored per user (encrypted in database)
+
+2. STREAMING RESPONSES:
+   - Frontend opens EventSource to /api/compare/stream?prompt="..."
+   - Backend retrieves user's tokens, decrypts them
+   - Calls Claude, ChatGPT, Gemini in parallel with user's token
+   - Each API call streams tokens back to backend
+   - Backend emits each token via SSE: "data: {source: 'claude', token: '...'}\n\n"
+   - Frontend appends tokens to respective panel in real-time
+   - User sees responses filling in gradually (token by token)
+
+3. COMPARISON ANALYSIS:
+   - After all three responses finish streaming
+   - Backend calls Claude to analyze the three responses
+   - Identifies: conflicts, consensus, unique points per AI
+   - Returns structured JSON with arrays of findings
+   - Frontend displays in collapsible sections
+
+4. TOKEN SECURITY:
+   - Generate encryption key: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+   - Store in .env as ENCRYPTION_KEY
+   - Encrypt tokens before storage: crypto.createCipheriv('aes-256-cbc', key, iv)
+   - Decrypt only when needed: crypto.createDecipheriv(...)
+   - Tokens never sent to frontend
+   - User can disconnect any provider anytime
+
+5. DATABASE:
+   - User table (id, email, oauth_ids)
+   - UserAIToken table (userId, provider, encryptedToken)
+   - ComparisonSession table (userId, prompt, responses)
+   - ComparisonAnalysis table (sessionId, conflicts, consensus, unique)
+
+DELIVERABLES:
+
+Frontend Components:
+✓ AuthScreen.tsx - Three login buttons for OAuth, shows connected status
+✓ StreamingComparison.tsx - Main interface with streaming response panels
+✓ ComparisonAnalysis.tsx - Shows conflicts, consensus, unique findings
+
+Backend Services:
+✓ auth.controller.ts - OAuth endpoints (/auth/openai, /auth/google, /auth/anthropic/callback)
+✓ auth.service.ts - User management, token storage
+✓ token.service.ts - Encrypt/decrypt tokens, secure storage
+✓ streaming.controller.ts - GET /api/compare/stream (SSE endpoint)
+✓ streaming.service.ts - Call all three AIs with user's tokens, handle streaming
+✓ comparison.service.ts - Analyze differences, generate comparison results
+
+Features:
+✓ Real-time token streaming (tokens appear as they arrive)
+✓ Parallel AI calls (all three run simultaneously, not sequentially)
+✓ Automatic comparison analysis (identifies conflicts, consensus, unique points)
+✓ Secure token storage (AES-256 encryption)
+✓ No backend API costs (users use their own quota)
+✓ Response history (save past comparisons)
+
+ENVIRONMENT VARIABLES:
+OPENAI_CLIENT_ID=...
+OPENAI_CLIENT_SECRET=...
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+ENCRYPTION_KEY=... (from: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+DATABASE_URL=postgresql://...
+JWT_SECRET=...
+NODE_ENV=development
+PORT=3000
+
+TESTING:
+1. Start backend: npm run start
+2. Start frontend: npm run dev
+3. Go to auth screen
+4. Click "Login with OpenAI" → should redirect to OpenAI OAuth → return with token stored
+5. Do same for Google and Anthropic
+6. All three connected ✓
+7. Type a prompt: "What are best practices for commissioning a gas turbine?"
+8. See all three responses streaming token-by-token
+9. After all finish, see comparison analysis:
+   - Conflicts: "Claude emphasizes safety, ChatGPT emphasizes efficiency"
+   - Consensus: "All agree about pre-commissioning checks"
+   - Unique: "Only Gemini mentioned nitrogen purging"
+
+USE AHMED-STACK SKILL FOR INITIAL SCAFFOLD, THEN BUILD FEATURES INCREMENTALLY.
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+                                              THE END
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════

@@ -10,9 +10,13 @@ import { AttachmentsService } from './attachments.service'
   controllers: [AttachmentsController],
   imports: [
     PrismaModule,
-    MulterModule.register({
-      storage: memoryStorage(),
-      limits: { fileSize: 20 * 1024 * 1024 },
+    MulterModule.registerAsync({
+      useFactory: () => ({
+        storage: memoryStorage(),
+        limits: {
+          fileSize: Number(process.env.MAX_FILE_SIZE_BYTES) || 20 * 1024 * 1024,
+        },
+      }),
     }),
   ],
   providers: [AttachmentsService],

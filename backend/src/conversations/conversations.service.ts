@@ -54,16 +54,29 @@ export class ConversationsService {
     }
   }
 
-  async findOne(userId: string, id: string) {
+  async findOne(userId: string, id: string, messagesLimit?: number) {
     const conversation = await this.prisma.conversation.findFirst({
       where: { id, userId },
       include: {
         messages: {
-          orderBy: { createdAt: 'asc' },
+          orderBy: { createdAt: 'desc' },
+          take: messagesLimit ?? 50,
           include: {
             providerResponses: {
               orderBy: { provider: 'asc' },
             },
+          },
+        },
+        attachments: {
+          orderBy: { createdAt: 'desc' },
+          take: 20,
+          select: {
+            id: true,
+            filename: true,
+            mimeType: true,
+            sizeBytes: true,
+            extractionStatus: true,
+            createdAt: true,
           },
         },
       },
@@ -71,6 +84,8 @@ export class ConversationsService {
     if (!conversation) {
       throw new NotFoundException('Conversation not found')
     }
+    // Reverse to chronological order
+    conversation.messages.reverse()
     return this.toDetail(conversation)
   }
 
@@ -142,6 +157,14 @@ export class ConversationsService {
         latencyMs: number | null
       }>
     }>
+    attachments: Array<{
+      id: string
+      filename: string
+      mimeType: string
+      sizeBytes: number | null
+      extractionStatus: string
+      createdAt: Date
+    }>
   }) {
     return {
       id: conversation.id,
@@ -152,6 +175,14 @@ export class ConversationsService {
       lastCompressedAt: conversation.lastCompressedAt?.toISOString() ?? null,
       createdAt: conversation.createdAt.toISOString(),
       updatedAt: conversation.updatedAt.toISOString(),
+      attachments: conversation.attachments.map((a) => ({
+        id: a.id,
+        filename: a.filename,
+        mimeType: a.mimeType,
+        sizeBytes: a.sizeBytes,
+        extractionStatus: a.extractionStatus,
+        createdAt: a.createdAt.toISOString(),
+      })),
       messages: conversation.messages.map((m) => ({
         id: m.id,
         role: m.role,

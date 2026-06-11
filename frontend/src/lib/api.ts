@@ -166,7 +166,7 @@ export async function getMeApi() {
   return data
 }
 
-export type ConversationType = 'COMMISSIONING' | 'GENERAL'
+export type ConversationType = 'COMMISSIONING' | 'CHAT'
 
 export interface ConversationSummary {
   id: string
@@ -204,6 +204,15 @@ export interface MessageBrief {
   providerResponses: ProviderResponseBrief[]
 }
 
+export interface AttachmentBrief {
+  id: string
+  filename: string
+  mimeType: string
+  sizeBytes: number | null
+  extractionStatus: string
+  createdAt: string
+}
+
 export interface ConversationDetail {
   id: string
   title: string
@@ -213,6 +222,7 @@ export interface ConversationDetail {
   lastCompressedAt: string | null
   createdAt: string
   updatedAt: string
+  attachments: AttachmentBrief[]
   messages: MessageBrief[]
 }
 
@@ -240,8 +250,9 @@ export async function listConversations(params?: { search?: string; page?: numbe
   return data
 }
 
-export async function getConversation(id: string) {
-  const { data } = await api.get<ConversationDetail>(`/conversations/${id}`)
+export async function getConversation(id: string, messagesLimit?: number) {
+  const params = messagesLimit ? { messagesLimit } : undefined
+  const { data } = await api.get<ConversationDetail>(`/conversations/${id}`, { params })
   return data
 }
 
@@ -280,9 +291,29 @@ export async function uploadAttachment(conversationId: string, file: File) {
   return data
 }
 
-export async function getMessages(conversationId: string) {
-  const { data } = await api.get<MessageBrief[]>(
+export async function listAttachments(conversationId: string) {
+  const { data } = await api.get<AttachmentBrief[]>(
+    `/conversations/${conversationId}/attachments`,
+  )
+  return data
+}
+
+export async function deleteAttachment(id: string) {
+  await api.delete(`/attachments/${id}`)
+}
+
+export interface PaginatedMessages {
+  items: MessageBrief[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
+}
+
+export async function getMessages(conversationId: string, params?: { page?: number; limit?: number }) {
+  const { data } = await api.get<PaginatedMessages>(
     `/conversations/${conversationId}/messages`,
+    { params },
   )
   return data
 }
@@ -310,5 +341,53 @@ export async function getComparison(messageId: string) {
   const { data } = await api.get<ComparisonResult | null>(
     `/comparison/${messageId}`,
   )
+  return data
+}
+
+/* Provider Credentials */
+
+export interface ProviderCredential {
+  id: string
+  provider: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE'
+  enabled: boolean
+  keyFingerprint: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ProviderHealth {
+  provider: string
+  configured: boolean
+  enabled?: boolean
+  healthy: boolean
+  message: string
+}
+
+export async function listCredentials() {
+  const { data } = await api.get<ProviderCredential[]>('/credentials')
+  return data
+}
+
+export async function createCredential(provider: string, apiKey: string) {
+  const { data } = await api.post<ProviderCredential>('/credentials', { provider, apiKey })
+  return data
+}
+
+export async function updateCredential(provider: string, apiKey: string) {
+  const { data } = await api.put<ProviderCredential>(`/credentials/${provider}`, { apiKey })
+  return data
+}
+
+export async function toggleCredential(provider: string) {
+  const { data } = await api.patch<ProviderCredential>(`/credentials/${provider}/toggle`)
+  return data
+}
+
+export async function deleteCredential(provider: string) {
+  await api.delete(`/credentials/${provider}`)
+}
+
+export async function checkCredentialHealth(provider: string) {
+  const { data } = await api.get<ProviderHealth>(`/credentials/${provider}/health`)
   return data
 }

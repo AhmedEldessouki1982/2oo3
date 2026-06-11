@@ -2,8 +2,10 @@ import { Controller, Logger, Param, Query, Sse } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import { filter, map, Observable } from 'rxjs'
 
+import { Public } from '../auth/decorators/public.decorator'
 import { StreamEventService } from './stream-event.service'
 
+@Public()
 @Controller('conversations/:conversationId/stream')
 export class StreamingController {
   private readonly logger = new Logger(StreamingController.name)
@@ -33,18 +35,14 @@ export class StreamingController {
 
     return this.streamEvents.events$.pipe(
       filter((event) => event.conversationId === conversationId),
-      map((event) => {
-        return new MessageEvent('message', {
-          data: JSON.stringify({
-            providerResponseId: event.providerResponseId,
-            messageId: event.messageId,
-            provider: event.provider,
-            chunk: event.chunk,
-            done: event.done,
-            error: event.error,
-          }),
-        }) as MessageEvent
-      }),
-    )
+      map((event) => JSON.stringify({
+        providerResponseId: event.providerResponseId,
+        messageId: event.messageId,
+        provider: event.provider,
+        chunk: event.chunk,
+        done: event.done,
+        error: event.error,
+      })),
+    ) as unknown as Observable<MessageEvent>
   }
 }

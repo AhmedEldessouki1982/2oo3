@@ -21,7 +21,7 @@ enum Provider {
 
 enum ConversationType {
   COMMISSIONING
-  GENERAL
+  CHAT
 }
 
 enum ConversationStatus {
@@ -66,6 +66,7 @@ model User {
   createdAt           DateTime             @default(now()) @map("created_at")
   updatedAt           DateTime             @updatedAt @map("updated_at")
   attachments         Attachment[]
+  auditLogs           AuditLog[]
   conversations       Conversation[]
   messages            Message[]
   providerCredentials ProviderCredential[]
@@ -199,6 +200,32 @@ model Attachment {
   @@index([messageId])
   @@index([userId])
   @@map("attachments")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  action    String
+  resource  String?
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([action])
+  @@map("audit_logs")
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  userId    String?  @map("user_id")
+  event     String
+  properties Json?   @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@index([event, createdAt])
+  @@map("analytics_events")
 }
 
 model RefreshToken {

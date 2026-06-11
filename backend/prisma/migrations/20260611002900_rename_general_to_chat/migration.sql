@@ -1,0 +1,1 @@
+ALTER TYPE "ConversationType" RENAME VALUE 'GENERAL' TO 'CHAT';

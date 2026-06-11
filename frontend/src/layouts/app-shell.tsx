@@ -1,13 +1,13 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
-import { Bot, LayoutDashboard, LogOut, Menu, MessageSquare, Plus, Sparkles, X } from 'lucide-react'
+import { Bot, LayoutDashboard, LogOut, Menu, MessageSquare, Plus, Settings, Sparkles, Waves, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { ConversationList } from '@/components/chat/conversation-list'
 import { useAuth } from '@/contexts/auth-context'
 import { cn } from '@/lib/utils'
-import { createConversation, listConversations, deleteConversation, type ConversationSummary } from '@/lib/api'
+import { createConversation, listConversations, deleteConversation, updateConversation, type ConversationSummary } from '@/lib/api'
 
 export function AppShell() {
   const { user, logout } = useAuth()
@@ -15,11 +15,16 @@ export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const [loadingConversations, setLoadingConversations] = useState(true)
+  const [search, setSearch] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>()
 
-  const loadConversations = useCallback(async () => {
+  const loadConversations = useCallback(async (searchTerm?: string) => {
     setLoadingConversations(true)
     try {
-      const result = await listConversations({ limit: 50 })
+      const result = await listConversations({
+        limit: 50,
+        ...(searchTerm ? { search: searchTerm } : {}),
+      })
       setConversations(result.items)
     } catch {
       // silently fail
@@ -28,11 +33,31 @@ export function AppShell() {
     }
   }, [])
 
+  // Initial load
   useEffect(() => {
     loadConversations()
   }, [loadConversations])
 
-  async function handleNew() {
+  // Debounced search
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      loadConversations(search || undefined)
+    }, 300)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [search, loadConversations])
+
+  // Auto-refresh conversation list every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadConversations(search || undefined)
+    }, 30_000)
+    return () => clearInterval(interval)
+  }, [search, loadConversations])
+
+  async function handleNewCommissioning() {
     try {
       const conv = await createConversation('New investigation', 'COMMISSIONING')
       setConversations((prev) => [conv, ...prev])
@@ -41,6 +66,23 @@ export function AppShell() {
     } catch {
       // silently fail
     }
+  }
+
+  async function handleNewChat() {
+    try {
+      const conv = await createConversation('New chat', 'CHAT')
+      setConversations((prev) => [conv, ...prev])
+      navigate(`/app/conversations/${conv.id}`)
+      setSidebarOpen(false)
+    } catch {
+      // silently fail
+    }
+  }
+
+  async function handleRename(id: string, title: string) {
+    const updated = await updateConversation(id, title)
+    setConversations((prev) => prev.map((c) => (c.id === id ? updated : c)))
+    return updated
   }
 
   async function handleDelete(id: string) {
@@ -80,13 +122,34 @@ export function AppShell() {
               <LayoutDashboard className="mr-1.5 inline-block h-4 w-4" />
               Dashboard
             </Link>
+            <Link
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              to="/compare"
+            >
+              <Waves className="h-4 w-4 text-emerald-300" />
+              Compare Lab
+            </Link>
             <button
               className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-              onClick={handleNew}
+              onClick={handleNewChat}
             >
-              <Plus className="h-4 w-4" />
-              New investigation
+              <Sparkles className="h-4 w-4 text-cyan-400" />
+              Chat
             </button>
+            <button
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              onClick={handleNewCommissioning}
+            >
+              <MessageSquare className="h-4 w-4" />
+              Commissioning
+            </button>
+            <Link
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              to="/settings"
+            >
+              <Settings className="h-4 w-4" />
+              Settings
+            </Link>
           </nav>
         </div>
 
@@ -146,23 +209,55 @@ export function AppShell() {
             <LayoutDashboard className="h-4 w-4" />
             Dashboard
           </Link>
-          <button
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            onClick={() => {
-              handleNew()
-              setSidebarOpen(false)
-            }}
+          <Link
+            className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            to="/compare"
+            onClick={() => setSidebarOpen(false)}
           >
-            <Plus className="h-4 w-4" />
-            New investigation
-          </button>
+            <Waves className="h-4 w-4 text-emerald-300" />
+            Compare Lab
+          </Link>
+          <Link
+            className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            to="/settings"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </Link>
+          <div className="mt-2 flex gap-2">
+            <button
+              className="flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              onClick={() => {
+                handleNewCommissioning()
+                setSidebarOpen(false)
+              }}
+            >
+              <MessageSquare className="h-4 w-4" />
+              Commissioning
+            </button>
+            <button
+              className="flex flex-1 items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              onClick={() => {
+                handleNewChat()
+                setSidebarOpen(false)
+              }}
+            >
+              <Sparkles className="h-4 w-4 text-cyan-400" />
+              Chat
+            </button>
+          </div>
         </div>
 
         <ConversationList
           conversations={conversations}
           loading={loadingConversations}
+          onNew={handleNewCommissioning}
+          onNewChat={handleNewChat}
           onDelete={handleDelete}
-          onNew={handleNew}
+          onRename={handleRename}
+          search={search}
+          onSearchChange={setSearch}
         />
 
         <div className="border-t border-border p-4">
@@ -182,8 +277,12 @@ export function AppShell() {
           <ConversationList
             conversations={conversations}
             loading={loadingConversations}
+            onNew={handleNewCommissioning}
+            onNewChat={handleNewChat}
             onDelete={handleDelete}
-            onNew={handleNew}
+            onRename={handleRename}
+            search={search}
+            onSearchChange={setSearch}
           />
         </aside>
 

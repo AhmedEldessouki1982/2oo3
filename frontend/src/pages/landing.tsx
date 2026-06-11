@@ -66,9 +66,9 @@ const architectureCards = [
 const chatModes = [
   {
     description:
-      'Ask any question and get answers from a single AI model. Perfect for everyday queries, brainstorming, or quick research.',
+      'Ask any question and get conversational answers from ChatGPT, Claude, and Gemini simultaneously. Perfect for everyday queries, brainstorming, or quick research.',
     icon: Sparkles,
-    title: 'General AI Chat',
+    title: 'Chat',
     cta: 'Chat now',
   },
   {

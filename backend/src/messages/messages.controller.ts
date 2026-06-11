@@ -6,12 +6,15 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
 
 import { AttachmentsService } from '../attachments/attachments.service'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
+import { PrismaService } from '../prisma/prisma.service'
 import { ProviderOrchestratorService } from '../providers/provider-orchestrator.service'
+import { ListMessagesQueryDto } from './dto/list-messages-query.dto'
 import { SendMessageDto } from './dto/send-message.dto'
 import { MessagesService } from './messages.service'
 
@@ -23,6 +26,7 @@ export class MessagesController {
     private readonly messagesService: MessagesService,
     private readonly orchestrator: ProviderOrchestratorService,
     private readonly attachmentsService: AttachmentsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Post()
@@ -42,6 +46,11 @@ export class MessagesController {
       await this.attachmentsService.linkToMessage(dto.attachmentIds, result.message.id)
     }
 
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: conversationId },
+      select: { type: true },
+    })
+
     const dispatches = result.providerResponses.map((r) => ({
       providerResponseId: r.id,
       messageId: result.message.id,
@@ -49,6 +58,7 @@ export class MessagesController {
       userId,
       provider: r.provider,
       prompt: dto.content,
+      conversationType: (conversation?.type ?? 'COMMISSIONING') as 'COMMISSIONING' | 'CHAT',
     }))
 
     this.orchestrator.dispatchAll(dispatches)
@@ -60,7 +70,8 @@ export class MessagesController {
   findAll(
     @CurrentUser('sub') userId: string,
     @Param('conversationId') conversationId: string,
+    @Query() query: ListMessagesQueryDto,
   ) {
-    return this.messagesService.getMessages(conversationId, userId)
+    return this.messagesService.getMessages(conversationId, userId, query)
   }
 }

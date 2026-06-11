@@ -1,0 +1,195 @@
+╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                           MULTI-AI ORCHESTRATOR ARCHITECTURE                                                       ║
+║                    (Chat Mode + Commissioning Mode - Single Unified Backend)                                       ║
+╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                        FRONTEND (React + Vite)                                                      │
+│                                                                                                                     │
+│  ┌────────────────────────────────┐         ┌────────────────────────────────┐                                   │
+│  │    CHAT MODE                   │         │  COMMISSIONING MODE            │                                   │
+│  │ ┌──────────────────────────┐   │         │ ┌──────────────────────────┐   │                                   │
+│  │ │ Textarea (User Prompt)   │   │         │ │ File Upload (Document)  │   │                                   │
+│  │ │ + Chat History Display   │   │         │ │ + Question Input        │   │                                   │
+│  │ └──────────────────────────┘   │         │ └──────────────────────────┘   │                                   │
+│  │           ↓                     │         │           ↓                     │                                   │
+│  │ [Send to All 3 AIs Button]     │         │ [Analyze Document Button]     │                                   │
+│  └────────────────────────────────┘         └────────────────────────────────┘                                   │
+│           ↓ (POST /api/ai/chat)                        ↓ (POST /api/ai/analyze-document)                        │
+│                                                                                                                     │
+│  ┌────────────────────────────────────────────────────────────────────────────┐                                 │
+│  │         MULTI-AI RESPONSE VIEW (Tabs or Side-by-Side)                     │                                 │
+│  │                                                                            │                                 │
+│  │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐       │                                 │
+│  │  │   Claude Panel   │  │  ChatGPT Panel   │  │   Gemini Panel   │       │                                 │
+│  │  │  (Complete Resp) │  │  (Complete Resp) │  │  (Complete Resp) │       │                                 │
+│  │  └──────────────────┘  └──────────────────┘  └──────────────────┘       │                                 │
+│  └────────────────────────────────────────────────────────────────────────────┘                                 │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                        ↑ (Axios)
+                                                        │
+                                                        ↓
+┌─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   BACKEND (NestJS + TypeScript)                                                     │
+│                                                                                                                     │
+│  ┌──────────────────────────────────────────────────────────────────────────────────────┐                       │
+│  │  AI Orchestrator Controller                                                          │                       │
+│  │  ┌─────────────────────────────────────────────────────────────────────────────┐    │                       │
+│  │  │ POST /api/ai/chat                                                           │    │                       │
+│  │  │ - Receives: { prompt, history, sessionId }                                 │    │                       │
+│  │  │ - Calls: AIOrchestrator.generateChatResponse()                             │    │                       │
+│  │  └─────────────────────────────────────────────────────────────────────────────┘    │                       │
+│  │                                                                                      │                       │
+│  │  ┌─────────────────────────────────────────────────────────────────────────────┐    │                       │
+│  │  │ POST /api/ai/analyze-document                                              │    │                       │
+│  │  │ - Receives: { documentContent, userQuestion, fileName, sessionId }         │    │                       │
+│  │  │ - Calls: AIOrchestrator.analyzeDocument()                                 │    │                       │
+│  │  └─────────────────────────────────────────────────────────────────────────────┘    │                       │
+│  └──────────────────────────────────────────────────────────────────────────────────────┘                       │
+│                                              ↓                                                                    │
+│  ┌──────────────────────────────────────────────────────────────────────────────────────┐                       │
+│  │  AI ORCHESTRATOR SERVICE (Core Logic)                                               │                       │
+│  │                                                                                      │                       │
+│  │  generateChatResponse(context):                                                     │                       │
+│  │  ┌─────────────────────────────────────────────────────────────────────────────┐    │                       │
+│  │  │ 1. Build context with system prompts                                       │    │                       │
+│  │  │ 2. Execute in PARALLEL (Promise.allSettled):                               │    │                       │
+│  │  │    ├─ callClaude(messages) → max_tokens: 2048, system: CLAUDE_PROMPT      │    │                       │
+│  │  │    ├─ callOpenAI(messages) → max_tokens: 2048, system: CHATGPT_PROMPT     │    │                       │
+│  │  │    └─ callGemini(content) → max_tokens: 2048, system: GEMINI_PROMPT       │    │                       │
+│  │  │ 3. Collect all three responses (even if one fails)                        │    │                       │
+│  │  │ 4. Return: [{ source, content, model, tokens }, ...]                     │    │                       │
+│  │  └─────────────────────────────────────────────────────────────────────────────┘    │                       │
+│  │                                                                                      │                       │
+│  │  analyzeDocument(docContent, question, context):                                    │                       │
+│  │  ┌─────────────────────────────────────────────────────────────────────────────┐    │                       │
+│  │  │ 1. Construct analysis prompt: "Analyze this doc and answer: <question>"    │    │                       │
+│  │  │ 2. Call generateChatResponse() with document as context                   │    │                       │
+│  │  │ 3. Return: [Claude Analysis, ChatGPT Analysis, Gemini Analysis]          │    │                       │
+│  │  └─────────────────────────────────────────────────────────────────────────────┘    │                       │
+│  └──────────────────────────────────────────────────────────────────────────────────────┘                       │
+└─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                │                                    │                                    │
+                ↓ (HTTP/REST)                        ↓ (HTTP/REST)                        ↓ (HTTP/REST)
+        ┌───────────────┐                  ┌───────────────┐                  ┌───────────────┐
+        │ ANTHROPIC API │                  │   OPENAI API  │                  │  GOOGLE API   │
+        │ (Claude)      │                  │ (GPT-4 Turbo) │                  │ (Gemini 1.5) │
+        │               │                  │               │                  │               │
+        │ max_tokens:   │                  │ max_tokens:   │                  │ max_tokens:   │
+        │ 2048          │                  │ 2048          │                  │ 2048          │
+        │               │                  │               │                  │               │
+        │ System Prompt:│                  │ System Prompt:│                  │ System Prompt:│
+        │ (authentic)   │                  │ (authentic)   │                  │ (authentic)   │
+        └───────────────┘                  └───────────────┘                  └───────────────┘
+                │                                    │                                    │
+                └────────────────────────────────────┴────────────────────────────────────┘
+                                                    │
+                                                    ↓
+                                    ┌───────────────────────────────┐
+                                    │  ALL THREE RESPOND IN ~5-10s  │
+                                    │  (parallel execution faster)  │
+                                    └───────────────────────────────┘
+
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+                                        KEY INSIGHT: WHY RESPONSES WERE INCOMPLETE
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+BEFORE (❌ Broken):
+  1. Sequential calls: Claude → wait → ChatGPT → wait → Gemini
+     • Total time: 30-60 seconds
+     • Early timeout/truncation due to long wait
+  2. Low max_tokens (512 or 1024)
+     • Responses cut mid-sentence
+  3. Generic system prompts (or none)
+     • Bots didn't behave authentically
+  4. No error handling
+     • If one AI failed, entire request failed
+
+AFTER (✓ Fixed):
+  1. Parallel calls: Claude || ChatGPT || Gemini (all at once)
+     • Total time: 5-10 seconds
+     • No timeout issues
+  2. High max_tokens (2048)
+     • Complete, full-length responses
+  3. Custom, personality-specific system prompts
+     • Claude: "thoughtful, nuanced"
+     • ChatGPT: "comprehensive, well-organized"
+     • Gemini: "balanced, solution-focused"
+  4. Promise.allSettled() error handling
+     • One AI failing doesn't break everything
+  5. Streaming support ready (future enhancement)
+     • Real-time token streaming possible
+
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+                                              DATABASE SCHEMA
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ChatSession (Stores conversation context)                                       │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ • id: String (PK)                                                               │
+│ • userId: String (FK)                                                           │
+│ • mode: Enum ('chat' | 'commissioning')                                         │
+│ • createdAt: DateTime                                                           │
+│ • messages: ChatMessage[] (relation)                                            │
+│ • documents: Document[] (relation)                                              │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ ChatMessage (Stores user prompts + all three AI responses)                      │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ • id: String (PK)                                                               │
+│ • sessionId: String (FK → ChatSession)                                          │
+│ • userPrompt: String                                                            │
+│ • claudeResponse: String?                                                       │
+│ • chatgptResponse: String?                                                      │
+│ • geminiResponse: String?                                                       │
+│ • timestamp: DateTime                                                           │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│ Document (For commissioning mode - stores doc + analyses)                       │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│ • id: String (PK)                                                               │
+│ • sessionId: String (FK → ChatSession)                                          │
+│ • fileName: String                                                              │
+│ • content: String (raw document text)                                           │
+│ • claudeAnalysis: String?                                                       │
+│ • chatgptAnalysis: String?                                                      │
+│ • geminiAnalysis: String?                                                       │
+│ • uploadedAt: DateTime                                                          │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+                                    DEPLOYMENT CHECKLIST
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+❑ Environment Variables (.env):
+  ANTHROPIC_API_KEY=sk-ant-...
+  OPENAI_API_KEY=sk-...
+  GOOGLE_API_KEY=...
+  DATABASE_URL=postgresql://...
+
+❑ NestJS Module Setup (app.module.ts):
+  - Import AIOrchestrationController
+  - Import AIOrchestrator service
+  - Register Prisma service
+
+❑ Install Dependencies:
+  npm install @anthropic-ai/sdk openai @google/generative-ai
+
+❑ Test Endpoints:
+  POST localhost:3000/api/ai/chat
+  POST localhost:3000/api/ai/analyze-document
+
+❑ Frontend Integration:
+  - Install axios: npm install axios
+  - Place MultiAIChat.tsx in components/
+  - Import and use <MultiAIChat /> in main page
+
+❑ Database:
+  npx prisma migrate dev --name init
+  npx prisma generate

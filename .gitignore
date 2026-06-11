@@ -19,3 +19,7 @@ pnpm-debug.log*
 Thumbs.db
 
 *.tsbuildinfo
+
+# Uploaded attachments
+uploads/
+backend/uploads/

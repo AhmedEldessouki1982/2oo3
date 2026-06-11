@@ -1,0 +1,363 @@
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+                                   OPENCODE PROMPTS FOR MULTI-AI PROJECT
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PASTE THESE PROMPTS INTO OPENCODE ONE AT A TIME (or as agents in a pipeline)
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PROMPT #1: INITIALIZE PROJECT SCAFFOLD
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+🎯 GOAL: Scaffold full-stack multi-AI orchestration app
+
+Build me a full-stack React + NestJS app for comparing three AI models (Claude, ChatGPT, Gemini) in real-time.
+
+REQUIREMENTS:
+- Frontend: React + Vite + TypeScript + Tailwind CSS v4 + shadcn/ui
+- Backend: NestJS + TypeScript + JWT auth
+- Database: Prisma + PostgreSQL
+- Two modes: "Chat" (user prompt) and "Commissioning" (document upload + analysis)
+- Frontend structure:
+  - components/MultiAIChat.tsx (main UI)
+  - components/ui/* (shadcn buttons, inputs, tabs, cards)
+  - hooks/useAIOrchestrator.ts (API calls)
+- Backend structure:
+  - src/ai-orchestration/ai-orchestrator.service.ts (core logic)
+  - src/ai-orchestration/ai-orchestrator.controller.ts (endpoints)
+  - src/auth/* (JWT guard)
+  - src/prisma/prisma.service.ts
+
+Create all files with proper TypeScript types, imports, and exports. Use axios for frontend API calls.
+
+USE THE AHMED-STACK SKILL
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PROMPT #2: IMPLEMENT AI ORCHESTRATOR SERVICE
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+🎯 GOAL: Build core service that manages parallel API calls to three AIs
+
+Create the AIOrchestrator NestJS service that:
+
+1. Takes a user prompt and forks it to Claude, ChatGPT, and Gemini in PARALLEL (not sequential)
+2. Each AI gets its own system prompt so they behave authentically:
+   - Claude: "thoughtful, nuanced, harmless, honest"
+   - ChatGPT: "comprehensive, well-organized, practical examples"
+   - Gemini: "balanced, multimodal-aware, solution-focused"
+
+3. Uses max_tokens: 2048 for all three (prevents incomplete responses)
+4. Returns all three responses even if one fails (Promise.allSettled)
+5. Supports chat history (prior messages in conversation)
+
+CRITICAL: The service must have:
+- async generateChatResponse(context) → returns array of responses
+- async analyzeDocument(docContent, question) → for commissioning mode
+- System prompts defined as class property
+- Each AI call wrapped in error handling
+- Response format: { source, content, model, tokens }
+
+Use @anthropic-ai/sdk for Claude, openai for ChatGPT, @google/generative-ai for Gemini.
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PROMPT #3: IMPLEMENT AI ORCHESTRATOR CONTROLLER
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+🎯 GOAL: Build API endpoints that the frontend calls
+
+Create AIOrchestrationController with two endpoints:
+
+1. POST /api/ai/chat
+   - Input: { prompt, history?, sessionId? }
+   - Calls AIOrchestrator.generateChatResponse()
+   - Returns: { success, data: { responses: [...] } }
+
+2. POST /api/ai/analyze-document
+   - Input: { documentContent, userQuestion, fileName?, sessionId? }
+   - Calls AIOrchestrator.analyzeDocument()
+   - Returns: { success, data: { responses: [...] } }
+
+Both endpoints should:
+- Use @UseGuards(JwtAuthGuard)
+- Validate inputs (throw BadRequestException if empty)
+- Catch errors and throw InternalServerErrorException
+- Return consistent response format
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PROMPT #4: IMPLEMENT REACT MULTI-AI CHAT COMPONENT
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+🎯 GOAL: Build beautiful, functional UI for chat and document analysis
+
+Create MultiAIChat.tsx React component with:
+
+LAYOUT:
+- Mode toggle buttons (Chat / Commissioning at top)
+- Input area that changes based on mode:
+  * Chat: Large textarea for prompt
+  * Commissioning: File upload + question textarea
+
+RESPONSE DISPLAY (after user submits):
+- Tabs view: Click tabs to switch between Claude / ChatGPT / Gemini
+- Side-by-side view: All three responses visible at once
+- Each response shows: AI name, model, tokens used, full response text
+
+FEATURES:
+- useStates for: mode, prompt, document, documentContent, question, responses, loading, chatHistory, sessionId
+- axios POST to /api/ai/chat and /api/ai/analyze-document
+- Loading spinner while waiting for all three AIs
+- Chat history display (list of prior messages in Chat mode)
+- File upload handler that reads file content
+
+USE SHADCN UI:
+- Button, Input, Textarea, Tabs, TabsContent, TabsList, TabsTrigger, Card, CardContent, CardHeader, CardTitle
+- Lucide icons: Upload, Loader2
+- Tailwind classes: bg-slate-900, text-white, grid-cols-3 for three-column layout
+
+COLORS: Dark theme, slate-900 background, blue/green/red accents for each AI
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PROMPT #5: IMPLEMENT PRISMA SCHEMA
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+🎯 GOAL: Define database structure for storing sessions, messages, and documents
+
+Create Prisma schema with three models:
+
+1. ChatSession
+   - id: String @id @default(cuid())
+   - userId: String
+   - mode: Enum ('chat' | 'commissioning')
+   - createdAt: DateTime @default(now())
+   - updatedAt: DateTime @updatedAt
+   - messages: ChatMessage[] (relation)
+   - documents: Document[] (relation)
+
+2. ChatMessage
+   - id: String @id @default(cuid())
+   - sessionId: String (FK)
+   - userPrompt: String
+   - claudeResponse: String?
+   - chatgptResponse: String?
+   - geminiResponse: String?
+   - timestamp: DateTime @default(now())
+
+3. Document
+   - id: String @id @default(cuid())
+   - sessionId: String (FK)
+   - fileName: String
+   - content: String (raw text from upload)
+   - claudeAnalysis: String?
+   - chatgptAnalysis: String?
+   - geminiAnalysis: String?
+   - uploadedAt: DateTime @default(now())
+
+Add proper indexes, relations, and cascade delete where appropriate.
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PROMPT #6: ADD ERROR HANDLING & LOGGING
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+🎯 GOAL: Ensure robustness when APIs fail
+
+Improve AIOrchestrator service to:
+- Log each API call start/end with timestamps
+- Use console.error() for failures
+- Return partial results if one or two AIs fail
+- Retry logic: if API call fails, try once more
+- Timeout: 30 seconds per AI call
+- Store error message in response if API fails
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PROMPT #7: ADD FILE UPLOAD & PDF PARSING
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+🎯 GOAL: Support .docx, .pdf, .txt document uploads
+
+Enhance frontend to:
+- Accept file upload in commissioning mode
+- Read .txt files directly via FileReader
+- For PDF: use pdfjs-dist library
+- For DOCX: use mammoth library
+- Show filename after upload
+- Pass file content to backend analyzeDocument endpoint
+
+Install: npm install pdfjs-dist mammoth
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PROMPT #8: ADD CHAT HISTORY PERSISTENCE
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+🎯 GOAL: Save conversation history to database
+
+Add to backend:
+- Service method to save ChatMessage to database
+- On each /api/ai/chat call, store the prompt + all three responses
+- On component mount, fetch prior messages for this session
+
+Frontend:
+- Display chat history in scrollable panel
+- Show message timestamp
+- Allow clear history button
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PROMPT #9: OPTIMIZE RESPONSE STREAMING (Advanced)
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+🎯 GOAL: Stream responses in real-time instead of waiting for all to finish
+
+Add to backend:
+- Streaming response handler for each AI (if API supports streaming)
+- WebSocket or Server-Sent Events to push tokens to frontend as they arrive
+- Frontend listens and updates UI in real-time per AI
+
+This is optional but improves perceived performance.
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+PROMPT #10: TESTING & DEPLOYMENT
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+🎯 GOAL: Verify everything works end-to-end
+
+Tests:
+1. Manual test: POST /api/ai/chat with prompt="Hello" → verify all three respond
+2. Manual test: POST /api/ai/analyze-document with a .txt file → verify all three analyze
+3. Frontend test: Load MultiAIChat, type prompt, click Send → see three responses
+
+Deployment:
+1. Create .env with API keys
+2. Run: npm install && npm run build
+3. Start backend: npm run start
+4. Start frontend: npm run dev
+5. Open http://localhost:5173
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+ALTERNATIVE: USE THIS SINGLE COMPREHENSIVE PROMPT
+
+If you want to give OpenCode one mega-prompt:
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+📋 COMPREHENSIVE MULTI-AI ORCHESTRATOR BUILD
+
+Build a full-stack app that forks user prompts to Claude, ChatGPT, and Gemini simultaneously, displaying all three 
+responses side-by-side. App has two modes:
+
+CHAT MODE:
+- User types a question
+- All three AIs respond in parallel with their authentic personalities
+- Responses appear in tabs or columns
+- Chat history is shown below
+
+COMMISSIONING MODE:
+- User uploads a project document (.txt, .pdf, .docx)
+- User asks a question about the document
+- All three AIs analyze the same document and respond
+- Each bot provides its own analysis
+
+TECH STACK:
+✓ Frontend: React + Vite + TypeScript + Tailwind CSS v4 + shadcn/ui + Lucide + Framer Motion
+✓ Backend: NestJS + TypeScript + Prisma + PostgreSQL + JWT Auth
+✓ APIs: Anthropic (Claude), OpenAI (GPT-4), Google Generative AI (Gemini)
+
+KEY REQUIREMENTS:
+1. PARALLEL execution (not sequential) → all three AIs called at once via Promise.allSettled()
+2. COMPLETE responses → max_tokens: 2048 for each AI
+3. AUTHENTIC behavior → custom system prompts per AI:
+   - Claude: "thoughtful, nuanced, harmless, honest"
+   - ChatGPT: "comprehensive, well-organized, practical"
+   - Gemini: "balanced, solution-focused, multimodal-aware"
+4. ERROR RESILIENCE → if one AI fails, others still return responses
+5. STREAMING READY → architecture supports future streaming enhancement
+
+DELIVERABLES:
+
+FRONTEND:
+- components/MultiAIChat.tsx (main UI with mode toggle, inputs, response display)
+- hooks/useAIOrchestrator.ts (API call hook)
+- Proper TypeScript types and error boundaries
+- Responsive layout: desktop (3 columns), mobile (tabs)
+- Dark theme with slate-900 background, blue/green/red accents
+
+BACKEND:
+- src/ai-orchestration/ai-orchestrator.service.ts
+  * async generateChatResponse(context) → parallel calls to all three
+  * async analyzeDocument(docContent, question) → same but for documents
+  * System prompts defined as class property
+  * max_tokens: 2048 for all AIs
+- src/ai-orchestration/ai-orchestrator.controller.ts
+  * POST /api/ai/chat → fork to all three
+  * POST /api/ai/analyze-document → fork to all three
+  * Input validation, error handling, JWT auth
+- Prisma schema with ChatSession, ChatMessage, Document models
+- Error handling: try-catch, Promise.allSettled(), proper HTTP responses
+
+DATABASE:
+- ChatSession: stores conversation context + mode + timestamp
+- ChatMessage: stores user prompt + all three AI responses
+- Document: stores uploaded file + all three analyses
+
+INTEGRATION:
+- Frontend calls backend endpoints via axios
+- Each endpoint returns all three responses in parallel
+- Frontend displays responses in tabs or side-by-side grid
+- Chat history persists and loads on page refresh
+
+TESTING:
+- Manual: POST to /api/ai/chat with prompt
+- Manual: POST to /api/ai/analyze-document with document
+- Frontend: type prompt, see all three responses appear
+
+START WITH THE AHMED-STACK SKILL TO SCAFFOLD, THEN BUILD INCREMENTALLY.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+
+HOW TO USE THESE IN OPENCODE:
+
+Option A: Sequential Prompts
+1. Copy PROMPT #1, paste into OpenCode, execute
+2. Copy PROMPT #2, paste into OpenCode, execute
+3. Continue through PROMPT #10
+4. This builds incrementally with each iteration
+
+Option B: Pipeline Agents (Advanced)
+Create .opencode/agents/AGENTS.md:
+
+```
+agents:
+  - name: scaffold
+    prompt: "PROMPT #1"
+    next: backend-service
+  - name: backend-service
+    prompt: "PROMPT #2"
+    next: backend-controller
+  - name: backend-controller
+    prompt: "PROMPT #3"
+    next: frontend-component
+  - name: frontend-component
+    prompt: "PROMPT #4"
+    next: database
+  - name: database
+    prompt: "PROMPT #5"
+    next: error-handling
+```
+
+Then execute: opencode agents run
+
+Option C: Single Mega-Prompt (Fastest)
+Copy the "COMPREHENSIVE MULTI-AI ORCHESTRATOR BUILD" prompt and paste it all at once.
+OpenCode will intelligently break it down and scaffold everything.
+
+═══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════

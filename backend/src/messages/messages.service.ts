@@ -4,6 +4,7 @@ import { Provider } from '@prisma/client'
 import { CompressionService } from '../compression/compression.service'
 import { PrismaService } from '../prisma/prisma.service'
 import { StreamEventService } from '../streaming/stream-event.service'
+import type { ListMessagesQueryDto } from './dto/list-messages-query.dto'
 
 @Injectable()
 export class MessagesService {
@@ -40,11 +41,6 @@ export class MessagesService {
       ? enabledProviders.map((p) => p.provider)
       : (['OPENAI', 'ANTHROPIC', 'GOOGLE'] as const)
 
-    // GENERAL conversations only use a single provider (the first enabled)
-    if (conversation.type === 'GENERAL') {
-      providerNames = [providerNames[0]]
-    }
-
     const providerResponses = await Promise.all(
       providerNames.map((provider) =>
         this.prisma.providerResponse.create({
@@ -58,6 +54,22 @@ export class MessagesService {
         }),
       ),
     )
+
+    // Auto-title from first user message
+    const userMessageCount = await this.prisma.message.count({
+      where: { conversationId, role: 'USER' },
+    })
+    if (userMessageCount === 1) {
+      const title = content.length > 60
+        ? content.slice(0, 57).trimEnd() + '...'
+        : content
+      this.prisma.conversation.update({
+        where: { id: conversationId },
+        data: { title },
+      }).catch((err) => {
+        this.logger.error(`Auto-title failed for ${conversationId}: ${err.message}`)
+      })
+    }
 
     // Trigger compression check asynchronously — never block message send
     this.compression.maybeCompress(conversationId).catch((err) => {
@@ -79,7 +91,7 @@ export class MessagesService {
     }
   }
 
-  async getMessages(conversationId: string, userId: string) {
+  async getMessages(conversationId: string, userId: string, query?: ListMessagesQueryDto) {
     const conversation = await this.prisma.conversation.findFirst({
       where: { id: conversationId, userId },
     })
@@ -87,20 +99,31 @@ export class MessagesService {
       throw new NotFoundException('Conversation not found')
     }
 
-    const messages = await this.prisma.message.findMany({
-      where: { conversationId },
-      orderBy: { createdAt: 'asc' },
-      include: {
-        providerResponses: {
-          orderBy: { provider: 'asc' },
-        },
-      },
-    })
+    const page = query?.page ?? 1
+    const limit = query?.limit ?? 50
+    const skip = (page - 1) * limit
 
-    return messages.map((m) => ({
+    const [messages, total] = await Promise.all([
+      this.prisma.message.findMany({
+        where: { conversationId },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          providerResponses: {
+            orderBy: { provider: 'asc' },
+          },
+        },
+      }),
+      this.prisma.message.count({ where: { conversationId } }),
+    ])
+
+    // Reverse to chronological order for display
+    const items = messages.reverse().map((m) => ({
       id: m.id,
       role: m.role,
       content: m.content,
+      compressed: m.compressed,
       createdAt: m.createdAt.toISOString(),
       providerResponses: m.providerResponses.map((r) => ({
         id: r.id,
@@ -111,6 +134,14 @@ export class MessagesService {
         latencyMs: r.latencyMs,
       })),
     }))
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    }
   }
 
   emitChunk(event: {

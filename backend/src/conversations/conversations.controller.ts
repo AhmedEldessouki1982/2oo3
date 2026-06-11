@@ -10,7 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common'
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger'
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 import { ConversationsService } from './conversations.service'
@@ -42,11 +42,15 @@ export class ConversationsController {
   }
 
   @Get(':id')
+  @ApiQuery({ name: 'messagesLimit', required: false, type: Number, example: 50 })
   findOne(
     @CurrentUser('sub') userId: string,
     @Param('id') id: string,
+    @Query('messagesLimit') messagesLimit?: string,
   ) {
-    return this.conversationsService.findOne(userId, id)
+    const parsed = messagesLimit ? Number(messagesLimit) : NaN
+    const limit = !Number.isNaN(parsed) && parsed > 0 ? parsed : undefined
+    return this.conversationsService.findOne(userId, id, limit)
   }
 
   @Patch(':id')

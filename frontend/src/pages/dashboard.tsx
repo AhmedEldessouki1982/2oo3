@@ -1,22 +1,26 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Bot, MessageSquare, Pencil, Plus, Search, Sparkles, Trash2, Wrench, X } from 'lucide-react'
+import { Bot, MessageSquare, Pencil, Plus, Search, Settings, Sparkles, Trash2, Wrench, X } from 'lucide-react'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { useAuth } from '@/contexts/auth-context'
+import { useAnalytics } from '@/hooks/use-analytics'
 import {
+  checkCredentialHealth,
   createConversation,
   deleteConversation,
   listConversations,
   updateConversation,
   type ConversationSummary,
+  type ProviderHealth,
 } from '@/lib/api'
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { track } = useAnalytics()
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -26,12 +30,23 @@ export default function DashboardPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [providerHealth, setProviderHealth] = useState<ProviderHealth[]>([])
 
   const loadConversations = useCallback(async () => {
     try {
-      const result = await listConversations({ search: search || undefined, page, limit: 20 })
+      const [result, healthResults] = await Promise.all([
+        listConversations({ search: search || undefined, page, limit: 20 }),
+        Promise.allSettled(
+          ['OPENAI', 'ANTHROPIC', 'GOOGLE'].map((p) => checkCredentialHealth(p)),
+        ),
+      ])
       setConversations(result.items)
       setTotalPages(result.totalPages)
+      const health: ProviderHealth[] = []
+      for (const r of healthResults) {
+        if (r.status === 'fulfilled') health.push(r.value)
+      }
+      setProviderHealth(health)
     } catch {
       // silently fail
     } finally {
@@ -54,6 +69,7 @@ export default function DashboardPage() {
   async function handleNewInvestigation() {
     try {
       const conv = await createConversation('New investigation', 'COMMISSIONING')
+      track('conversation_created', { type: 'COMMISSIONING' })
       navigate(`/app/conversations/${conv.id}`)
     } catch {
       // silently fail
@@ -62,7 +78,8 @@ export default function DashboardPage() {
 
   async function handleNewChat() {
     try {
-      const conv = await createConversation('New chat', 'GENERAL')
+      const conv = await createConversation('New chat', 'CHAT')
+      track('conversation_created', { type: 'CHAT' })
       navigate(`/app/conversations/${conv.id}`)
     } catch {
       // silently fail
@@ -76,6 +93,7 @@ export default function DashboardPage() {
   async function confirmDelete(id: string) {
     try {
       await deleteConversation(id)
+      track('conversation_deleted')
       setConversations((prev) => prev.filter((c) => c.id !== id))
     } catch {
       // silently fail
@@ -129,14 +147,14 @@ export default function DashboardPage() {
             onClick={handleNewChat}
           >
             <Sparkles className="h-4 w-4" />
-            New chat
+            Chat
           </button>
           <button
             className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all hover:-translate-y-0.5 hover:from-emerald-400 hover:to-cyan-400 hover:shadow-emerald-500/35"
             onClick={handleNewInvestigation}
           >
             <Plus className="h-4 w-4" />
-            New investigation
+            Commissioning
           </button>
         </div>
       </div>
@@ -167,13 +185,29 @@ export default function DashboardPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-300">
                 <Wrench className="h-5 w-5" />
               </div>
-              <CardTitle>Available providers</CardTitle>
+              <div className="flex flex-1 items-center justify-between">
+                <CardTitle>Available providers</CardTitle>
+                <button
+                  className="rounded-lg p-1.5 text-subtle transition-colors hover:bg-muted hover:text-foreground"
+                  onClick={() => navigate('/settings')}
+                  title="Manage provider keys"
+                >
+                  <Settings className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-cyan-300">3</p>
+            <p className="text-3xl font-bold text-cyan-300">
+              {providerHealth.filter((h) => h.healthy).length}
+              <span className="ml-2 text-base font-normal text-subtle">/ 3</span>
+            </p>
             <p className="mt-1 text-sm text-subtle">
-              ChatGPT · Claude · Gemini (simulated)
+              {providerHealth.length > 0
+                ? providerHealth
+                    .map((h) => `${h.provider.charAt(0) + h.provider.slice(1).toLowerCase()}${h.healthy ? '' : ' (offline)'}`)
+                    .join(' · ')
+                : 'ChatGPT · Claude · Gemini (simulated)'}
             </p>
           </CardContent>
         </Card>
@@ -242,7 +276,7 @@ export default function DashboardPage() {
                       className="flex min-w-0 flex-1 items-center gap-3 text-left"
                       onClick={() => navigate(`/app/conversations/${conv.id}`)}
                     >
-                      {conv.type === 'GENERAL' ? (
+                      {conv.type === 'CHAT' ? (
                         <Sparkles className="h-5 w-5 shrink-0 text-cyan-400" />
                       ) : (
                         <MessageSquare className="h-5 w-5 shrink-0 text-subtle" />

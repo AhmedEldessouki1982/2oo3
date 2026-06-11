@@ -1,5 +1,7 @@
 import { type FormEvent, useRef, useState } from 'react'
-import { ArrowUp, Loader2, Paperclip, X } from 'lucide-react'
+import { AlertCircle, ArrowUp, FileText, Image, Loader2, Paperclip, Table, X } from 'lucide-react'
+
+const MAX_FILE_SIZE_BYTES = Number(import.meta.env.VITE_MAX_FILE_SIZE_BYTES) || 20 * 1024 * 1024
 
 interface FileAttachment {
   file: File
@@ -9,12 +11,26 @@ interface FileAttachment {
 interface ChatInputProps {
   onSend: (content: string, files: File[]) => Promise<void>
   disabled: boolean
+  conversationType?: 'COMMISSIONING' | 'CHAT'
 }
 
-export function ChatInput({ onSend, disabled }: ChatInputProps) {
+function fileIcon(mime: string) {
+  if (mime.startsWith('image/')) return <Image className="h-3 w-3 shrink-0" />
+  if (mime.includes('spreadsheet') || mime.includes('csv')) return <Table className="h-3 w-3 shrink-0" />
+  return <FileText className="h-3 w-3 shrink-0" />
+}
+
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+export function ChatInput({ onSend, disabled, conversationType }: ChatInputProps) {
   const [content, setContent] = useState('')
   const [sending, setSending] = useState(false)
   const [attachments, setAttachments] = useState<FileAttachment[]>([])
+  const [fileError, setFileError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   async function handleSubmit(e: FormEvent) {
@@ -32,8 +48,20 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
   }
 
   function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+    setFileError(null)
     const files = Array.from(e.target.files ?? [])
     if (files.length === 0) return
+
+    const oversized = files.filter((f) => f.size > MAX_FILE_SIZE_BYTES)
+    if (oversized.length > 0) {
+      setFileError(
+        `${oversized[0].name} exceeds the 20 MB file size limit.`,
+      )
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+      return
+    }
 
     const newAttachments = files.map((file) => ({
       file,
@@ -52,6 +80,12 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
 
   return (
     <form className="border-t border-border bg-background/80 px-4 py-4 backdrop-blur-xl" onSubmit={handleSubmit}>
+      {fileError && (
+        <div className="mb-2 flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-400">
+          <AlertCircle className="h-3 w-3 shrink-0" />
+          {fileError}
+        </div>
+      )}
       {attachments.length > 0 && (
         <div className="mb-2 flex flex-wrap gap-2 px-1">
           {attachments.map((att) => (
@@ -59,7 +93,9 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
               key={att.id}
               className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-muted-foreground"
             >
-              <span className="max-w-[160px] truncate">{att.file.name}</span>
+              {fileIcon(att.file.type)}
+              <span className="max-w-[120px] truncate">{att.file.name}</span>
+              <span className="text-subtle">({formatSize(att.file.size)})</span>
               <button
                 className="ml-0.5 rounded p-0.5 hover:bg-muted"
                 onClick={() => removeAttachment(att.id)}
@@ -100,7 +136,7 @@ export function ChatInput({ onSend, disabled }: ChatInputProps) {
                 handleSubmit(e)
               }
             }}
-            placeholder="Ask about commissioning procedures, risks, or next steps..."
+            placeholder={conversationType === 'CHAT' ? 'Ask anything...' : 'Ask about commissioning procedures, risks, or next steps...'}
             rows={1}
             value={content}
           />
