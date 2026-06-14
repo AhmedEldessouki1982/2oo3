@@ -47,13 +47,34 @@ export class CompareStreamingService {
     }
 
     const tasks = [
-      this.processProvider(Provider.ANTHROPIC, 'claude', prompt, keyMap.get(Provider.ANTHROPIC) ?? null, emit, abortSignal).then((text) => {
+      this.processProvider(
+        Provider.ANTHROPIC,
+        'claude',
+        prompt,
+        keyMap.get(Provider.ANTHROPIC) ?? null,
+        emit,
+        abortSignal,
+      ).then((text) => {
         summaries.claude = text
       }),
-      this.processProvider(Provider.OPENAI, 'chatgpt', prompt, keyMap.get(Provider.OPENAI) ?? null, emit, abortSignal).then((text) => {
+      this.processProvider(
+        Provider.OPENAI,
+        'chatgpt',
+        prompt,
+        keyMap.get(Provider.OPENAI) ?? null,
+        emit,
+        abortSignal,
+      ).then((text) => {
         summaries.chatgpt = text
       }),
-      this.processProvider(Provider.GOOGLE, 'gemini', prompt, keyMap.get(Provider.GOOGLE) ?? null, emit, abortSignal).then((text) => {
+      this.processProvider(
+        Provider.GOOGLE,
+        'gemini',
+        prompt,
+        keyMap.get(Provider.GOOGLE) ?? null,
+        emit,
+        abortSignal,
+      ).then((text) => {
         summaries.gemini = text
       }),
     ]
@@ -84,7 +105,8 @@ export class CompareStreamingService {
       emit({ source, token: '', done: true })
       return text
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Provider request failed'
+      const message =
+        error instanceof Error ? error.message : 'Provider request failed'
       this.logger.error(`Provider ${provider} failed: ${message}`)
       emit({ source, token: '', error: message, done: true })
       return ''
@@ -109,7 +131,11 @@ export class CompareStreamingService {
     }
   }
 
-  private async callOpenAI(prompt: string, apiKey: string, abortSignal: AbortSignal): Promise<string> {
+  private async callOpenAI(
+    prompt: string,
+    apiKey: string,
+    abortSignal: AbortSignal,
+  ): Promise<string> {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       signal: abortSignal,
@@ -143,7 +169,11 @@ export class CompareStreamingService {
     return content
   }
 
-  private async callAnthropic(prompt: string, apiKey: string, abortSignal: AbortSignal): Promise<string> {
+  private async callAnthropic(
+    prompt: string,
+    apiKey: string,
+    abortSignal: AbortSignal,
+  ): Promise<string> {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       signal: abortSignal,
@@ -177,12 +207,19 @@ export class CompareStreamingService {
       throw new Error('Anthropic response missing content blocks')
     }
     return contentBlocks
-      .filter((block: any) => block?.type === 'text' && typeof block.text === 'string')
+      .filter(
+        (block: any) =>
+          block?.type === 'text' && typeof block.text === 'string',
+      )
       .map((block: any) => block.text)
       .join('\n')
   }
 
-  private async callGemini(prompt: string, apiKey: string, abortSignal: AbortSignal): Promise<string> {
+  private async callGemini(
+    prompt: string,
+    apiKey: string,
+    abortSignal: AbortSignal,
+  ): Promise<string> {
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
       {
@@ -210,7 +247,9 @@ export class CompareStreamingService {
     }
 
     const data: any = await response.json()
-    const text = data?.candidates?.[0]?.content?.parts?.map((part: any) => part?.text ?? '').join('\n')
+    const text = data?.candidates?.[0]?.content?.parts
+      ?.map((part: any) => part?.text ?? '')
+      .join('\n')
     if (!text) {
       throw new Error('Gemini response missing text')
     }
@@ -240,7 +279,10 @@ export class CompareStreamingService {
     }
   }
 
-  private async simulatedResponse(provider: Provider, prompt: string): Promise<string> {
+  private async simulatedResponse(
+    provider: Provider,
+    prompt: string,
+  ): Promise<string> {
     const preview = prompt.length > 80 ? `${prompt.slice(0, 80)}...` : prompt
     switch (provider) {
       case Provider.OPENAI:

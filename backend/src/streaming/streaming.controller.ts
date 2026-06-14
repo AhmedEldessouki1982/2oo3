@@ -35,14 +35,16 @@ export class StreamingController {
 
     return this.streamEvents.events$.pipe(
       filter((event) => event.conversationId === conversationId),
-      map((event) => JSON.stringify({
-        providerResponseId: event.providerResponseId,
-        messageId: event.messageId,
-        provider: event.provider,
-        chunk: event.chunk,
-        done: event.done,
-        error: event.error,
-      })),
+      map((event) =>
+        JSON.stringify({
+          providerResponseId: event.providerResponseId,
+          messageId: event.messageId,
+          provider: event.provider,
+          chunk: event.chunk,
+          done: event.done,
+          error: event.error,
+        }),
+      ),
     ) as unknown as Observable<MessageEvent>
   }
 }

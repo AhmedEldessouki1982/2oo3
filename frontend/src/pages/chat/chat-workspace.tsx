@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Bot, ChevronDown, ChevronRight, FileText, Image, Paperclip, Sparkles, Table } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Bot, ChevronDown, ChevronRight, ChevronsDown, FileText, Image, Paperclip, Sparkles, Table } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 import { ComparisonPanel } from '@/components/comparison/comparison-panel'
 import { ModeToggle, type ViewMode } from '@/components/comparison/mode-toggle'
@@ -48,9 +50,18 @@ export default function ChatWorkspacePage() {
   const [loadedPages, setLoadedPages] = useState(1)
   const lastSentMessageRef = useRef<string | null>(null)
   const eventSourceRef = useRef<EventSource | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const [userScrolledUp, setUserScrolledUp] = useState(false)
+
+  const isNearBottom = useCallback(() => {
+    const el = scrollContainerRef.current
+    if (!el) return true
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 200
+  }, [])
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    setUserScrolledUp(false)
   }, [])
 
   useEffect(() => {
@@ -202,9 +213,22 @@ export default function ChatWorkspacePage() {
     }
   }, [conversationId, loadCompletedMessages, convType])
 
+  const handleScroll = useCallback(() => {
+    setUserScrolledUp(!isNearBottom())
+  }, [isNearBottom])
+
   useEffect(() => {
-    scrollToBottom()
-  }, [messages, streamingResponses, scrollToBottom])
+    const el = scrollContainerRef.current
+    if (!el) return
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    return () => el.removeEventListener('scroll', handleScroll)
+  }, [handleScroll])
+
+  useEffect(() => {
+    if (isNearBottom()) {
+      scrollToBottom()
+    }
+  }, [messages, streamingResponses, scrollToBottom, isNearBottom])
 
   async function handleSend(content: string, files: File[]) {
     if (!conversationId) return
@@ -310,7 +334,7 @@ export default function ChatWorkspacePage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex-1 overflow-y-auto">
+      <div className="relative flex-1 overflow-y-auto" ref={scrollContainerRef}>
         <div className="mx-auto max-w-7xl space-y-6 px-4 py-6">
           {hasComparisonData && (
             <div className="flex justify-center">
@@ -425,12 +449,14 @@ export default function ChatWorkspacePage() {
                 {msg.role === 'USER' && (
                   <div className="flex justify-end">
                     <div className={cn(
-                      'max-w-2xl rounded-2xl px-5 py-3 text-sm text-foreground ring-1',
+                      'max-w-2xl rounded-2xl px-5 py-3 text-sm text-foreground prose prose-invert prose-sm prose-p:text-foreground prose-strong:text-foreground prose-headings:text-foreground ring-1',
                       isChat
                         ? 'bg-cyan-500/10 ring-cyan-500/10'
                         : 'bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 ring-emerald-500/10',
                     )}>
-                      {msg.content}
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {msg.content}
+                      </ReactMarkdown>
                     </div>
                   </div>
                 )}
@@ -446,7 +472,7 @@ export default function ChatWorkspacePage() {
                         (r) => r.provider === provider,
                       )
 
-                      const response = inStream ?? fromStore
+                      const response = fromStore ?? inStream
 
                       if (!response) {
                         return (
@@ -489,6 +515,21 @@ export default function ChatWorkspacePage() {
           )}
           <div ref={messagesEndRef} />
         </div>
+
+        <AnimatePresence>
+          {hasActiveStreaming() && userScrolledUp && (
+            <motion.button
+              animate={{ opacity: 1, y: 0 }}
+              className="absolute bottom-4 left-1/2 z-40 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-border bg-card px-4 py-2 text-xs text-muted-foreground shadow-lg transition-colors hover:text-foreground"
+              exit={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 10 }}
+              onClick={scrollToBottom}
+            >
+              <ChevronsDown className="h-3.5 w-3.5" />
+              Scroll to latest
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       <ChatInput conversationType={convType} disabled={hasActiveStreaming()} onSend={handleSend} />

@@ -1,5 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { AlertTriangle, CheckCircle, Lightbulb, Search, AlertOctagon } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 import type { ComparisonResult, ComparisonSection } from '@/lib/api'
 import { Spinner } from '@/components/ui/spinner'
@@ -100,9 +102,11 @@ function SectionCard({
         {section.findings.map((finding, i) => (
           <div
             key={i}
-            className={`rounded-lg px-3 py-2 text-sm text-card-foreground ${severityClass(section.severity)}`}
+            className={`rounded-lg px-3 py-2 text-sm text-card-foreground prose prose-invert prose-sm prose-p:text-card-foreground prose-strong:text-foreground prose-li:text-card-foreground prose-headings:text-foreground max-w-none ${severityClass(section.severity)}`}
           >
-            {finding}
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {finding}
+            </ReactMarkdown>
           </div>
         ))}
       </div>

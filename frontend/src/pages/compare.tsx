@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { AlertCircle, CheckCircle2, Sparkles, Waves, Send, Loader2 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -234,7 +236,11 @@ export default function ComparePage() {
               </div>
               <div className="relative mt-4 max-h-64 overflow-y-auto rounded-2xl border border-border/50 bg-black/20 p-4 text-sm leading-relaxed text-muted-foreground">
                 {text ? (
-                  <pre className="whitespace-pre-wrap text-foreground">{text}</pre>
+                  <div className="prose prose-invert prose-sm max-w-none prose-headings:text-foreground prose-headings:font-semibold prose-p:text-foreground prose-a:text-emerald-400 prose-strong:text-foreground prose-code:text-emerald-300 prose-code:bg-card prose-code:px-1 prose-code:rounded prose-pre:bg-card prose-pre:border prose-pre:border-border prose-th:text-foreground prose-td:text-foreground prose-li:text-foreground prose-blockquote:text-subtle">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {text}
+                    </ReactMarkdown>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2 text-subtle">
                     <Sparkles className="h-4 w-4 animate-pulse" />
@@ -313,8 +319,10 @@ function InsightCard({
       ) : (
         <ul className="space-y-2 text-sm text-foreground">
           {items.map((item, index) => (
-            <li key={index} className="rounded-xl bg-black/20 px-3 py-2">
-              {item}
+            <li key={index} className="rounded-xl bg-black/20 px-3 py-2 prose prose-invert prose-sm prose-p:text-foreground prose-strong:text-foreground prose-li:text-foreground prose-headings:text-foreground max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {item}
+              </ReactMarkdown>
             </li>
           ))}
         </ul>

@@ -36,10 +36,14 @@ export class MessagesController {
     @Param('conversationId') conversationId: string,
     @Body() dto: SendMessageDto,
   ) {
+    const promptContent = dto.content?.trim() || (dto.attachmentIds?.length
+      ? 'Analyze the attached document(s) and provide a detailed summary of findings, risks, and recommendations relevant to this commissioning investigation.'
+      : '')
+
     const result = await this.messagesService.sendMessage(
       conversationId,
       userId,
-      dto.content,
+      promptContent,
     )
 
     if (dto.attachmentIds?.length) {
@@ -57,7 +61,7 @@ export class MessagesController {
       conversationId,
       userId,
       provider: r.provider,
-      prompt: dto.content,
+      prompt: promptContent,
       conversationType: (conversation?.type ?? 'COMMISSIONING') as 'COMMISSIONING' | 'CHAT',
     }))
 

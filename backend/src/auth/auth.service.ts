@@ -80,7 +80,9 @@ export class AuthService {
       },
     })
     if (!stored) {
-      throw new UnauthorizedException('Refresh token has been revoked or expired')
+      throw new UnauthorizedException(
+        'Refresh token has been revoked or expired',
+      )
     }
 
     const user = await this.prisma.user.findUnique({
@@ -140,7 +142,11 @@ export class AuthService {
     return { accessToken, refreshToken }
   }
 
-  private generateAccessToken(user: { id: string; email: string; role: string }) {
+  private generateAccessToken(user: {
+    id: string
+    email: string
+    role: string
+  }) {
     return this.jwtService.sign(
       { sub: user.id, email: user.email, role: user.role },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -64,9 +64,10 @@ export class AiOrchestrationController {
     const enabledProviders = await this.prisma.providerCredential.findMany({
       where: { userId, enabled: true },
     })
-    let providerNames = enabledProviders.length > 0
-      ? enabledProviders.map((p) => p.provider)
-      : (['OPENAI', 'ANTHROPIC', 'GOOGLE'] as const)
+    let providerNames =
+      enabledProviders.length > 0
+        ? enabledProviders.map((p) => p.provider)
+        : (['OPENAI', 'ANTHROPIC', 'GOOGLE'] as const)
 
     const providerResponses = await Promise.all(
       providerNames.map((provider) =>
@@ -94,10 +95,9 @@ export class AiOrchestrationController {
 
     const responses = await this.orchestrator.dispatchAllSync(dispatches)
 
-    this.comparisonService.generateComparison(
-      message.id,
-      conversation.id,
-    ).catch((err) => this.logger.error(`Comparison failed: ${err.message}`))
+    this.comparisonService
+      .generateComparison(message.id, conversation.id)
+      .catch((err) => this.logger.error(`Comparison failed: ${err.message}`))
 
     return {
       sessionId: dto.sessionId ?? conversation.id,
@@ -138,9 +138,10 @@ export class AiOrchestrationController {
     const enabledProviders = await this.prisma.providerCredential.findMany({
       where: { userId, enabled: true },
     })
-    let providerNames = enabledProviders.length > 0
-      ? enabledProviders.map((p) => p.provider)
-      : (['OPENAI', 'ANTHROPIC', 'GOOGLE'] as const)
+    let providerNames =
+      enabledProviders.length > 0
+        ? enabledProviders.map((p) => p.provider)
+        : (['OPENAI', 'ANTHROPIC', 'GOOGLE'] as const)
 
     const providerResponses = await Promise.all(
       providerNames.map((provider) =>

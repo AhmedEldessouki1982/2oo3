@@ -266,9 +266,12 @@ export async function deleteConversation(id: string) {
 }
 
 export async function sendMessage(conversationId: string, content: string, attachmentIds?: string[]) {
+  const body: Record<string, unknown> = {}
+  if (content) body.content = content
+  if (attachmentIds?.length) body.attachmentIds = attachmentIds
   const { data } = await api.post<CreateMessageResult>(
     `/conversations/${conversationId}/messages`,
-    { content, attachmentIds },
+    body,
   )
   return data
 }
