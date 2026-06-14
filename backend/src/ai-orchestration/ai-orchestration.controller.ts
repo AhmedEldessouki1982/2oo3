@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common'
 import { Provider } from '@prisma/client'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
+import type { Request } from 'express'
 
 import { ComparisonService } from '../comparison/comparison.service'
 import { PrismaService } from '../prisma/prisma.service'
@@ -27,6 +28,10 @@ interface DocumentAnalysisDto {
   sessionId?: string
 }
 
+interface RequestWithUser extends Request {
+  user?: { sub: string }
+}
+
 @ApiBearerAuth()
 @ApiTags('AI Orchestration')
 @Controller('ai')
@@ -41,7 +46,7 @@ export class AiOrchestrationController {
 
   @Post('chat')
   @HttpCode(HttpStatus.OK)
-  async chat(@Body() dto: ChatRequestDto, @Req() req: any) {
+  async chat(@Body() dto: ChatRequestDto, @Req() req: RequestWithUser) {
     const userId = req.user?.sub ?? 'anonymous'
 
     const conversation = await this.prisma.conversation.create({
@@ -64,10 +69,10 @@ export class AiOrchestrationController {
     const enabledProviders = await this.prisma.providerCredential.findMany({
       where: { userId, enabled: true },
     })
-    let providerNames =
+    const providerNames =
       enabledProviders.length > 0
         ? enabledProviders.map((p) => p.provider)
-        : (['OPENAI', 'ANTHROPIC', 'GOOGLE'] as const)
+        : ['OPENAI', 'ANTHROPIC', 'GOOGLE']
 
     const providerResponses = await Promise.all(
       providerNames.map((provider) =>
@@ -114,7 +119,7 @@ export class AiOrchestrationController {
 
   @Post('analyze-document')
   @HttpCode(HttpStatus.OK)
-  async analyzeDocument(@Body() dto: DocumentAnalysisDto, @Req() req: any) {
+  async analyzeDocument(@Body() dto: DocumentAnalysisDto, @Req() req: RequestWithUser) {
     const userId = req.user?.sub ?? 'anonymous'
 
     const conversation = await this.prisma.conversation.create({
@@ -138,10 +143,10 @@ export class AiOrchestrationController {
     const enabledProviders = await this.prisma.providerCredential.findMany({
       where: { userId, enabled: true },
     })
-    let providerNames =
+    const providerNames =
       enabledProviders.length > 0
         ? enabledProviders.map((p) => p.provider)
-        : (['OPENAI', 'ANTHROPIC', 'GOOGLE'] as const)
+        : ['OPENAI', 'ANTHROPIC', 'GOOGLE']
 
     const providerResponses = await Promise.all(
       providerNames.map((provider) =>

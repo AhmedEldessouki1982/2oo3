@@ -1,7 +1,12 @@
 import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
+import type { Request } from 'express'
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard'
 import { AnalyticsService } from './analytics.service'
+
+interface RequestWithUser extends Request {
+  user?: { sub: string }
+}
 
 class TrackEventDto {
   event!: string
@@ -17,7 +22,7 @@ export class AnalyticsController {
 
   @Post('track')
   @ApiOperation({ summary: 'Track an analytics event' })
-  async track(@Req() req: any, @Body() dto: TrackEventDto) {
+  async track(@Req() req: RequestWithUser, @Body() dto: TrackEventDto) {
     await this.analytics.track(dto.event, req.user?.sub, dto.properties)
     return { recorded: true }
   }

@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, MinLength } from 'class-validator'
+import { IsEnum, IsString, MinLength } from 'class-validator'
 
 export class CreateProviderCredentialDto {
   @IsEnum(['OPENAI', 'ANTHROPIC', 'GOOGLE'])

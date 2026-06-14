@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
-import { Bot, LayoutDashboard, LogOut, Menu, MessageSquare, Plus, Settings, Sparkles, Waves, X } from 'lucide-react'
+import { Bot, LayoutDashboard, LogOut, Menu, MessageSquare, Settings, Sparkles, Waves, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'

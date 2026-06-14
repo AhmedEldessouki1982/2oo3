@@ -21,7 +21,7 @@ export class ProviderCredentialsService {
 
   async create(userId: string, provider: string, apiKey: string) {
     const existing = await this.prisma.providerCredential.findUnique({
-      where: { userId_provider: { userId, provider: provider as any } },
+      where: { userId_provider: { userId, provider: provider as Provider } },
     })
     if (existing) {
       throw new ConflictException(`Credential for ${provider} already exists — use update to rotate`)
@@ -33,7 +33,7 @@ export class ProviderCredentialsService {
     const credential = await this.prisma.providerCredential.create({
       data: {
         userId,
-        provider: provider as any,
+        provider: provider as Provider,
         encryptedKeyMaterial,
         keyFingerprint,
         enabled: true,
@@ -72,7 +72,7 @@ export class ProviderCredentialsService {
 
   async update(userId: string, provider: string, apiKey: string) {
     const existing = await this.prisma.providerCredential.findFirst({
-      where: { userId, provider: provider as any },
+      where: { userId, provider: provider as Provider },
     })
     if (!existing) {
       throw new NotFoundException(`Credential for ${provider} not found`)
@@ -102,7 +102,7 @@ export class ProviderCredentialsService {
 
   async toggle(userId: string, provider: string) {
     const existing = await this.prisma.providerCredential.findFirst({
-      where: { userId, provider: provider as any },
+      where: { userId, provider: provider as Provider },
     })
     if (!existing) {
       throw new NotFoundException(`Credential for ${provider} not found`)
@@ -129,7 +129,7 @@ export class ProviderCredentialsService {
 
   async remove(userId: string, provider: string) {
     const existing = await this.prisma.providerCredential.findFirst({
-      where: { userId, provider: provider as any },
+      where: { userId, provider: provider as Provider },
     })
     if (!existing) {
       throw new NotFoundException(`Credential for ${provider} not found`)
@@ -143,7 +143,7 @@ export class ProviderCredentialsService {
 
   async checkHealth(userId: string, provider: string) {
     const existing = await this.prisma.providerCredential.findFirst({
-      where: { userId, provider: provider as any },
+      where: { userId, provider: provider as Provider },
     })
     if (!existing) {
       return { provider, configured: false, healthy: false, message: 'No API key configured' }
@@ -238,7 +238,7 @@ export class ProviderCredentialsService {
     apiKey: string
   } | null> {
     const credential = await this.prisma.providerCredential.findFirst({
-      where: { userId, provider: provider as any },
+      where: { userId, provider: provider as Provider },
     })
     if (!credential) return null
 

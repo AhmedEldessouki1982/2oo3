@@ -41,7 +41,6 @@ describe('EncryptionService', () => {
 
 describe('ProviderCredentialsService', () => {
   let service: ProviderCredentialsService
-  let prisma: PrismaService
 
   const mockPrisma = {
     providerCredential: {
@@ -97,7 +96,7 @@ describe('ProviderCredentialsService', () => {
       mockPrisma.providerCredential.findUnique.mockResolvedValue({
         id: 'existing',
         provider: 'OPENAI',
-      } as any)
+      } as { id: string; provider: string })
 
       await expect(service.create('user-1', 'OPENAI', 'sk-test')).rejects.toThrow(
         'already exists',
@@ -156,7 +155,7 @@ describe('ProviderCredentialsService', () => {
         id: 'cred-1',
         provider: 'OPENAI',
       })
-      mockPrisma.providerCredential.delete.mockResolvedValue({} as any)
+      mockPrisma.providerCredential.delete.mockResolvedValue({} as { id: string })
       mockPrisma.auditLog.create.mockResolvedValue({})
 
       await service.remove('user-1', 'OPENAI')

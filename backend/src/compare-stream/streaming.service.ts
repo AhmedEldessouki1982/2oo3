@@ -12,6 +12,43 @@ export interface StreamChunk {
 
 type ChunkEmitter = (chunk: StreamChunk) => void
 
+interface OpenAIMessage {
+  content: string
+}
+
+interface OpenAIChoice {
+  message: OpenAIMessage
+}
+
+interface OpenAIResponse {
+  choices: OpenAIChoice[]
+}
+
+interface AnthropicContentBlock {
+  type: string
+  text: string
+}
+
+interface AnthropicResponse {
+  content: AnthropicContentBlock[]
+}
+
+interface GeminiPart {
+  text: string
+}
+
+interface GeminiContent {
+  parts: GeminiPart[]
+}
+
+interface GeminiCandidate {
+  content: GeminiContent
+}
+
+interface GeminiResponse {
+  candidates: GeminiCandidate[]
+}
+
 interface ProviderTexts {
   claude: string
   chatgpt: string
@@ -161,7 +198,7 @@ export class CompareStreamingService {
       throw new Error(`OpenAI returned ${response.status}`)
     }
 
-    const data: any = await response.json()
+    const data = (await response.json()) as OpenAIResponse
     const content = data?.choices?.[0]?.message?.content
     if (typeof content !== 'string') {
       throw new Error('OpenAI response missing content')
@@ -201,17 +238,17 @@ export class CompareStreamingService {
       throw new Error(`Anthropic returned ${response.status}`)
     }
 
-    const data: any = await response.json()
+    const data = (await response.json()) as AnthropicResponse
     const contentBlocks = data?.content
     if (!Array.isArray(contentBlocks)) {
       throw new Error('Anthropic response missing content blocks')
     }
     return contentBlocks
       .filter(
-        (block: any) =>
+        (block): block is AnthropicContentBlock =>
           block?.type === 'text' && typeof block.text === 'string',
       )
-      .map((block: any) => block.text)
+      .map((block) => block.text)
       .join('\n')
   }
 
@@ -246,9 +283,9 @@ export class CompareStreamingService {
       throw new Error(`Gemini returned ${response.status}`)
     }
 
-    const data: any = await response.json()
+    const data = (await response.json()) as GeminiResponse
     const text = data?.candidates?.[0]?.content?.parts
-      ?.map((part: any) => part?.text ?? '')
+      ?.map((part) => part?.text ?? '')
       .join('\n')
     if (!text) {
       throw new Error('Gemini response missing text')

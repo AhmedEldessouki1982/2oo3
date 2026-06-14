@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Link, useLocation } from 'react-router-dom'
-import { MessageSquare, Plus, Search, Sparkles, Trash2, X } from 'lucide-react'
+import { MessageSquare, Search, Sparkles, Trash2, X } from 'lucide-react'
 import { useCallback, useRef, useState } from 'react'
 
 import { cn } from '@/lib/utils'

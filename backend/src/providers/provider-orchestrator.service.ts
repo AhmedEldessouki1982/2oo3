@@ -34,6 +34,43 @@ interface ResponseContext {
   searchResult: SearchResult
 }
 
+interface OpenAIMessage {
+  content: string
+}
+
+interface OpenAIChoice {
+  message: OpenAIMessage
+}
+
+interface OpenAIResponse {
+  choices: OpenAIChoice[]
+}
+
+interface AnthropicContentBlock {
+  type: string
+  text: string
+}
+
+interface AnthropicResponse {
+  content: AnthropicContentBlock[]
+}
+
+interface GeminiPart {
+  text: string
+}
+
+interface GeminiContent {
+  parts: GeminiPart[]
+}
+
+interface GeminiCandidate {
+  content: GeminiContent
+}
+
+interface GeminiResponse {
+  candidates: GeminiCandidate[]
+}
+
 @Injectable()
 export class ProviderOrchestratorService {
   private readonly logger = new Logger(ProviderOrchestratorService.name)
@@ -79,7 +116,7 @@ export class ProviderOrchestratorService {
   }
 
   private async dispatchSingleSync(dispatch: ProviderDispatch): Promise<AIResponse> {
-    const { providerResponseId, messageId, conversationId, provider, prompt, conversationType } = dispatch
+    const { providerResponseId, conversationId, provider, prompt, conversationType } = dispatch
     const startedAt = new Date()
 
     const [history, attachmentContext, searchResult] = await Promise.all([
@@ -369,7 +406,7 @@ export class ProviderOrchestratorService {
       throw new Error(`OpenAI returned ${response.status}`)
     }
 
-    const data: any = await response.json()
+    const data = (await response.json()) as OpenAIResponse
     const content = data?.choices?.[0]?.message?.content
     if (typeof content !== 'string') {
       throw new Error('OpenAI response missing content')
@@ -403,14 +440,14 @@ export class ProviderOrchestratorService {
       throw new Error(`Anthropic returned ${response.status}`)
     }
 
-    const data: any = await response.json()
+    const data = (await response.json()) as AnthropicResponse
     const contentBlocks = data?.content
     if (!Array.isArray(contentBlocks)) {
       throw new Error('Anthropic response missing content blocks')
     }
     return contentBlocks
-      .filter((block: any) => block?.type === 'text' && typeof block.text === 'string')
-      .map((block: any) => block.text)
+      .filter((block): block is AnthropicContentBlock => block?.type === 'text' && typeof block.text === 'string')
+      .map((block) => block.text)
       .join('\n')
   }
 
@@ -443,8 +480,8 @@ export class ProviderOrchestratorService {
       throw new Error(`Gemini returned ${response.status}`)
     }
 
-    const data: any = await response.json()
-    const text = data?.candidates?.[0]?.content?.parts?.map((part: any) => part?.text ?? '').join('\n')
+    const data = (await response.json()) as GeminiResponse
+    const text = data?.candidates?.[0]?.content?.parts?.map((part) => part?.text ?? '').join('\n')
     if (!text) {
       throw new Error('Gemini response missing text')
     }
@@ -518,7 +555,7 @@ export class ProviderOrchestratorService {
 
     const webRef =
       hasWebResults && needsSearch
-        ? `\n\nI did some research on this to give you the most accurate information. Here's what I found:\n\n${searchResult.results.map((r, i) => `• **${r.title}** — ${r.snippet}`).join('\n')}\n\nI'd encourage you to look into these sources directly if you want to dive deeper into any of them.`
+        ? `\n\nI did some research on this to give you the most accurate information. Here's what I found:\n\n${searchResult.results.map((r) => `• **${r.title}** — ${r.snippet}`).join('\n')}\n\nI'd encourage you to look into these sources directly if you want to dive deeper into any of them.`
         : ''
 
     const body = needsSearch
@@ -546,7 +583,7 @@ export class ProviderOrchestratorService {
 
     const webRef =
       hasWebResults && needsSearch
-        ? `\n\nI searched for the latest information on this topic. Here are some relevant results:\n\n${searchResult.results.map((r, i) => `📌 **${r.title}**\n   ${r.snippet}`).join('\n\n')}\n\nThese should give you a good overview. Let me know if you want me to dig deeper into any of them.`
+        ? `\n\nI searched for the latest information on this topic. Here are some relevant results:\n\n${searchResult.results.map((r) => `📌 **${r.title}**\n   ${r.snippet}`).join('\n\n')}\n\nThese should give you a good overview. Let me know if you want me to dig deeper into any of them.`
         : ''
 
     const body = needsSearch

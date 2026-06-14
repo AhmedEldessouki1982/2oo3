@@ -16,7 +16,6 @@ import {
 } from 'lucide-react'
 
 import { useAnalytics } from '@/hooks/use-analytics'
-import { useAuth } from '@/contexts/auth-context'
 import {
   checkCredentialHealth,
   createCredential,
@@ -35,7 +34,6 @@ const PROVIDER_INFO: Record<string, { name: string; color: string; docs: string 
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth()
   const { track } = useAnalytics()
   const [credentials, setCredentials] = useState<ProviderCredential[]>([])
   const [loading, setLoading] = useState(true)

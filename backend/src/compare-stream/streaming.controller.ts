@@ -8,7 +8,7 @@ import {
   Res,
 } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import type { Response } from 'express'
+import type { Request, Response } from 'express'
 
 import { Public } from '../auth/decorators/public.decorator'
 import { CompareStreamingService } from './streaming.service'
@@ -30,7 +30,7 @@ export class CompareStreamingController {
     @Query('prompt') prompt: string,
     @Query('token') token: string,
     @Res() res: Response,
-    @Req() req: any,
+    @Req() req: Request,
   ) {
     if (!prompt || !prompt.trim()) {
       throw new BadRequestException('Prompt cannot be empty')
@@ -42,9 +42,9 @@ export class CompareStreamingController {
       return
     }
 
-    let payload: any
+    let payload: { sub: string }
     try {
-      payload = this.jwtService.verify(token)
+      payload = this.jwtService.verify(token) as { sub: string }
     } catch (error) {
       this.logger.warn(`Invalid JWT token for compare stream: ${error}`)
       this.writeEvent(res, { source: 'system', error: 'Unauthorized' })

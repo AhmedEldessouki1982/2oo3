@@ -3,11 +3,8 @@ import * as crypto from 'node:crypto'
 
 const ALGORITHM = 'aes-256-gcm'
 const IV_LENGTH = 16
-const TAG_LENGTH = 16
-const SALT_LENGTH = 32
 const KEY_ITERATIONS = 16384
 const KEY_LENGTH = 32
-const DIGEST = 'sha256'
 
 @Injectable()
 export class EncryptionService {

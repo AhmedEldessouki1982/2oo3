@@ -37,7 +37,7 @@ export class MessagesService {
       where: { userId, enabled: true },
     })
 
-    let providerNames = enabledProviders.length > 0
+    const providerNames = enabledProviders.length > 0
       ? enabledProviders.map((p) => p.provider)
       : (['OPENAI', 'ANTHROPIC', 'GOOGLE'] as const)
 

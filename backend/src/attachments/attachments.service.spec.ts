@@ -7,7 +7,6 @@ import { AttachmentsService } from './attachments.service'
 
 describe('AttachmentsService', () => {
   let service: AttachmentsService
-  let prisma: PrismaService
 
   const mockPrisma = {
     attachment: {
@@ -30,7 +29,6 @@ describe('AttachmentsService', () => {
     }).compile()
 
     service = module.get<AttachmentsService>(AttachmentsService)
-    prisma = module.get<PrismaService>(PrismaService)
     jest.clearAllMocks()
   })
 

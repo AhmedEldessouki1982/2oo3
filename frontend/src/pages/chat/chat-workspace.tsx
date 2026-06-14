@@ -142,7 +142,7 @@ export default function ChatWorkspacePage() {
     } finally {
       setComparisonLoading(false)
     }
-  }, [])
+  }, [track])
 
   useEffect(() => {
     if (!conversationId) return
@@ -211,7 +211,7 @@ export default function ChatWorkspacePage() {
       es.close()
       eventSourceRef.current = null
     }
-  }, [conversationId, loadCompletedMessages, convType])
+  }, [conversationId, loadCompletedMessages, loadComparison, convType])
 
   const handleScroll = useCallback(() => {
     setUserScrolledUp(!isNearBottom())
