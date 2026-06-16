@@ -122,21 +122,22 @@ export default function ComparePage() {
         }
 
         if (payload.source && isProvider(payload.source)) {
+          const provider = payload.source
           if (payload.error) {
-            setError((prev) => prev ?? `${PROVIDER_META[payload.source].label} could not generate a response.`)
-            setCompleted((prev) => ({ ...prev, [payload.source]: true }))
+            setError((prev) => prev ?? `${PROVIDER_META[provider].label} could not generate a response.`)
+            setCompleted((prev) => ({ ...prev, [provider]: true }))
             return
           }
 
           if (payload.token) {
             setResponses((prev) => ({
               ...prev,
-              [payload.source]: prev[payload.source] + payload.token,
+              [provider]: prev[provider] + payload.token,
             }))
           }
 
           if (payload.done) {
-            setCompleted((prev) => ({ ...prev, [payload.source]: true }))
+            setCompleted((prev) => ({ ...prev, [provider]: true }))
           }
         }
       } catch {
