@@ -16,7 +16,7 @@ export class MessagesService {
     private readonly compression: CompressionService,
   ) {}
 
-  async sendMessage(conversationId: string, userId: string, content: string) {
+  async sendMessage(conversationId: string, userId: string, content: string, geminiMode?: 'GEMINI' | 'BIG_PICKLE') {
     const conversation = await this.prisma.conversation.findFirst({
       where: { id: conversationId, userId },
     })
@@ -37,9 +37,19 @@ export class MessagesService {
       where: { userId, enabled: true },
     })
 
-    const providerNames = enabledProviders.length > 0
-      ? enabledProviders.map((p) => p.provider)
+    const fallbackProviders = geminiMode === 'BIG_PICKLE'
+      ? (['OPENAI', 'ANTHROPIC', 'BIG_PICKLE'] as const)
       : (['OPENAI', 'ANTHROPIC', 'GOOGLE'] as const)
+
+    let providerNames = enabledProviders.length > 0
+      ? enabledProviders.map((p) => p.provider)
+      : fallbackProviders
+
+    if (geminiMode === 'BIG_PICKLE') {
+      providerNames = providerNames.map((p) => p === 'GOOGLE' ? 'BIG_PICKLE' : p)
+    } else {
+      providerNames = providerNames.map((p) => p === 'BIG_PICKLE' ? 'GOOGLE' : p)
+    }
 
     const providerResponses = await Promise.all(
       providerNames.map((provider) =>

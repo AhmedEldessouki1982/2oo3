@@ -17,6 +17,7 @@ enum Provider {
   OPENAI
   ANTHROPIC
   GOOGLE
+  BIG_PICKLE
 }
 
 enum ConversationType {
@@ -71,6 +72,7 @@ model User {
   messages            Message[]
   providerCredentials ProviderCredential[]
   refreshTokens      RefreshToken[]
+  routines           Routine[]
 
   @@map("users")
 }
@@ -226,6 +228,24 @@ model AnalyticsEvent {
   @@index([userId, createdAt])
   @@index([event, createdAt])
   @@map("analytics_events")
+}
+
+model Routine {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  name        String
+  description String   @db.Text
+  schedule    String   // HOURLY or DAILY
+  active      Boolean  @default(true)
+  lastRunAt   DateTime? @map("last_run_at")
+  lastResponse String? @map("last_response") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([active])
+  @@map("routines")
 }
 
 model RefreshToken {

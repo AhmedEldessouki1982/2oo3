@@ -14,6 +14,7 @@ import RegisterPage from '@/pages/auth/register'
 import SettingsPage from '@/pages/settings'
 import ChatWorkspacePage from '@/pages/chat/chat-workspace'
 import ComparePage from '@/pages/compare'
+import RoutinesPage from '@/pages/routines'
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
           >
             <Route element={<DashboardPage />} path="/dashboard" />
             <Route element={<ComparePage />} path="/compare" />
+            <Route element={<RoutinesPage />} path="/routines" />
             <Route element={<SettingsPage />} path="/settings" />
             <Route element={<ChatWorkspacePage />} path="/app/conversations/:conversationId" />
           </Route>

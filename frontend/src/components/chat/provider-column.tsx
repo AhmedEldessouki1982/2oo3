@@ -34,6 +34,19 @@ function GeminiIcon() {
   )
 }
 
+function BigPickleIcon() {
+  return (
+    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24">
+      <path
+        d="M12 3c-2 0-3.5 1.5-3.5 3.5v1C7 8 6 9.5 6 11v1c0 2.5 2 4.5 4.5 4.5h3c2.5 0 4.5-2 4.5-4.5v-1c0-1.5-1-3-2.5-3.5v-1C15.5 4.5 14 3 12 3z"
+        fill="#84cc16"
+      />
+      <path d="M12 16.5v3" stroke="#84cc16" strokeLinecap="round" strokeWidth="1.5" />
+      <path d="M10 19.5h4" stroke="#84cc16" strokeLinecap="round" strokeWidth="1.5" />
+    </svg>
+  )
+}
+
 const providerThemes: Record<string, { accent: string; bg: string; border: string; text: string; icon: React.ReactNode }> = {
   OPENAI: {
     accent: 'from-emerald-400 to-emerald-500',
@@ -56,12 +69,20 @@ const providerThemes: Record<string, { accent: string; bg: string; border: strin
     text: 'text-blue-300',
     icon: <GeminiIcon />,
   },
+  BIG_PICKLE: {
+    accent: 'from-lime-400 to-lime-500',
+    bg: 'bg-lime-500/5',
+    border: 'border-lime-500/20',
+    text: 'text-lime-300',
+    icon: <BigPickleIcon />,
+  },
 }
 
 const providerLabels: Record<string, string> = {
   OPENAI: 'ChatGPT',
   ANTHROPIC: 'Claude',
   GOOGLE: 'Gemini',
+  BIG_PICKLE: 'Big Pickle',
 }
 
 export interface StreamResponseState {

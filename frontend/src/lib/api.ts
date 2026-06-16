@@ -265,10 +265,11 @@ export async function deleteConversation(id: string) {
   await api.delete(`/conversations/${id}`)
 }
 
-export async function sendMessage(conversationId: string, content: string, attachmentIds?: string[]) {
+export async function sendMessage(conversationId: string, content: string, attachmentIds?: string[], geminiMode?: 'GEMINI' | 'BIG_PICKLE') {
   const body: Record<string, unknown> = {}
   if (content) body.content = content
   if (attachmentIds?.length) body.attachmentIds = attachmentIds
+  if (geminiMode) body.geminiMode = geminiMode
   const { data } = await api.post<CreateMessageResult>(
     `/conversations/${conversationId}/messages`,
     body,
@@ -351,7 +352,7 @@ export async function getComparison(messageId: string) {
 
 export interface ProviderCredential {
   id: string
-  provider: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE'
+  provider: 'OPENAI' | 'ANTHROPIC' | 'GOOGLE' | 'BIG_PICKLE'
   enabled: boolean
   keyFingerprint: string | null
   createdAt: string
@@ -393,4 +394,42 @@ export async function deleteCredential(provider: string) {
 export async function checkCredentialHealth(provider: string) {
   const { data } = await api.get<ProviderHealth>(`/credentials/${provider}/health`)
   return data
+}
+
+/* Routines */
+
+export interface Routine {
+  id: string
+  name: string
+  description: string
+  schedule: 'HOURLY' | 'DAILY'
+  active: boolean
+  lastRunAt: string | null
+  lastResponse: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export async function createRoutine(name: string, description: string, schedule: 'HOURLY' | 'DAILY') {
+  const { data } = await api.post<Routine>('/routines', { name, description, schedule })
+  return data
+}
+
+export async function listRoutines() {
+  const { data } = await api.get<Routine[]>('/routines')
+  return data
+}
+
+export async function getRoutine(id: string) {
+  const { data } = await api.get<Routine>(`/routines/${id}`)
+  return data
+}
+
+export async function updateRoutine(id: string, fields: { name?: string; description?: string; schedule?: 'HOURLY' | 'DAILY'; active?: boolean }) {
+  const { data } = await api.patch<Routine>(`/routines/${id}`, fields)
+  return data
+}
+
+export async function deleteRoutine(id: string) {
+  await api.delete(`/routines/${id}`)
 }

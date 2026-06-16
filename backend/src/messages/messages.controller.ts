@@ -44,6 +44,7 @@ export class MessagesController {
       conversationId,
       userId,
       promptContent,
+      dto.geminiMode,
     )
 
     if (dto.attachmentIds?.length) {

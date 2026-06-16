@@ -161,6 +161,7 @@ export class ProviderOrchestratorService {
       OPENAI: 'gpt-4-turbo',
       ANTHROPIC: 'claude-opus-4-20250514',
       GOOGLE: 'gemini-1.5-pro',
+      BIG_PICKLE: 'big-pickle-v1',
     }
     return models[provider] ?? `${provider.toLowerCase()}-latest`
   }
@@ -380,6 +381,8 @@ export class ProviderOrchestratorService {
         return this.callAnthropic(apiKey, prompt)
       case Provider.GOOGLE:
         return this.callGemini(apiKey, prompt)
+      case Provider.BIG_PICKLE:
+        return this.callBigPickle(apiKey, prompt)
       default:
         throw new Error(`Unsupported provider ${provider}`)
     }
@@ -488,6 +491,35 @@ export class ProviderOrchestratorService {
     return text
   }
 
+  async callBigPickle(apiKey: string, prompt: string): Promise<string> {
+    const response = await fetch('https://opencode.ai/zen/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'big-pickle-v1',
+        temperature: 0.7,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPTS.BIG_PICKLE },
+          { role: 'user', content: prompt },
+        ],
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Big Pickle returned ${response.status}`)
+    }
+
+    const data = (await response.json()) as OpenAIResponse
+    const content = data?.choices?.[0]?.message?.content
+    if (typeof content !== 'string') {
+      throw new Error('Big Pickle response missing content')
+    }
+    return content
+  }
+
   private generalResponse(
     provider: string,
     prompt: string,
@@ -502,6 +534,7 @@ export class ProviderOrchestratorService {
       OPENAI: this.openaiResponse(prompt, searchResult, isFirstTurn, hasAttachments, hasWebResults, needsSearch),
       ANTHROPIC: this.anthropicResponse(prompt, searchResult, isFirstTurn, hasAttachments, hasWebResults, needsSearch),
       GOOGLE: this.googleResponse(prompt, searchResult, isFirstTurn, hasAttachments, hasWebResults, needsSearch),
+      BIG_PICKLE: this.bigPickleResponse(prompt, searchResult, isFirstTurn, hasAttachments, hasWebResults, needsSearch),
     }
 
     const text = responses[provider] ?? this.defaultGeneralResponse(prompt)
@@ -593,6 +626,39 @@ export class ProviderOrchestratorService {
     return `${greeting}${attachmentRef}${webRef}${body}\n\n> *This is a simulated response from Google for development purposes.*`
   }
 
+  async bigPickleStandalone(prompt: string): Promise<string> {
+    const searchResult = { query: prompt, results: [], summary: '' }
+    return this.bigPickleResponse(prompt, searchResult, true, false, false, true)
+  }
+
+  private bigPickleResponse(
+    prompt: string,
+    searchResult: SearchResult,
+    isFirstTurn: boolean,
+    hasAttachments: boolean,
+    hasWebResults: boolean,
+    needsSearch: boolean,
+  ): string {
+    const greeting = isFirstTurn
+      ? 'Oh great, another question. Fine, let\'s get to it.'
+      : 'You\'re back. Alright, let me fire up the brain cells.'
+
+    const attachmentRef = hasAttachments
+      ? '\n\nI glanced at your files. They\'re mostly fine — the usual mix of useful data and noise. I\'ll work with what\'s relevant.'
+      : ''
+
+    const webRef =
+      hasWebResults && needsSearch
+        ? `\n\nI dug through the web so you don't have to. Here's what's actually worth knowing:\n\n${searchResult.results.map((r, i) => `**${i + 1}. ${r.title}**\n   ${r.snippet}`).join('\n\n')}\n\nDon't take my word for it — verify these yourself. I'm smart, but I'm not infallible.`
+        : ''
+
+    const body = needsSearch
+      ? `\n\nSo you want to know about "${prompt.length > 80 ? prompt.slice(0, 80) + '...' : prompt}". Here's the straight dope:\n\nThe obvious answer is probably wrong. Everyone looks at this the same way and misses the real issue. Let me save you some time.\n\n**The short version:** There's no magic bullet. Anyone promising a simple solution is selling something. You need to look at the fundamentals, question every assumption, and prepare for things to go sideways.\n\n**What I'd actually do:** Strip away the noise. Focus on the three things that actually matter: (1) what are you trying to achieve, (2) what's in your way, and (3) what's your plan B when plan A blows up. Everything else is decoration.\n\nStill with me? Good. Now go challenge everything I just said — that's how you'll get to the real answer.`
+      : `\n\nSure, I've got bandwidth. What's on your mind? Keep it interesting, preferably.`
+
+    return `${greeting}${attachmentRef}${webRef}${body}\n\n> *This is a simulated response from Big Pickle for development purposes.*`
+  }
+
   private defaultGeneralResponse(prompt: string): string {
     const preview = prompt.length > 80 ? prompt.slice(0, 80) + '...' : prompt
     return `Hi! Thanks for your message about "${preview}".\n\nThat's an interesting topic. Here are my thoughts on it — I think the best approach really depends on what you're looking to achieve. There's a lot of depth here, so feel free to ask follow-up questions about any specific aspect.\n\nLet me know if you'd like me to explore this further!\n\n> *This is a simulated placeholder response for development.*`
@@ -649,6 +715,21 @@ For your query regarding "${promptPreview}", here is my commissioning engineerin
 **Documentation Requirements**\n\nEnsure the following documentation is current:\n- System completion certificates (mechanical, electrical, I&C)\n- Test results and calibration records\n- Punch list items with clear responsibility and target dates\n- Signed turnover packages for each system boundary
 
 > *This is a simulated response from Google for development purposes.*`,
+      BIG_PICKLE: `${isFirstTurn ? 'Alright, let\'s cut through the noise and look at this commissioning problem with fresh eyes.' : 'You want more? Fine. Let\'s poke holes in this some more.'}
+
+You're asking about "${promptPreview}". Here's what actually matters, not what the textbook says.${attachmentNote}
+
+**Reality Check**\n\nFirst off, let's be honest about where things usually go wrong: everyone documents what they *plan* to do, nobody documents what they *actually* did. Your commissioning package is already out of date — accept it and plan for it.
+
+**What Everyone Misses**\n\n✅ Your schedule is optimistic by at least 30%. Plan for it.\n✅ Your vendor thinks they're supporting you next month. Confirm today.\n✅ Your interlock matrix has at least three logic errors. Find them before first fire.\n✅ Your commissioning team is missing at least two critical roles. Identify them now.\n✅ Your risk register is a wish list. Pressure-test every single item.
+
+**Hard Truths About Commissioning**\n\nCommissioning isn't where you prove the design works — it's where you discover the design doesn't work and have to fix it under schedule pressure. That's the reality. Everything else is marketing.
+
+**What I'd Actually Do**\n\nStop reviewing the schedule. Start reviewing the logic. Stop chasing paper. Start chasing interlocks. The paperwork will catch up when the systems work. The opposite isn't true.
+
+Oh, and get your backup plan ready. You'll need it by day three.
+
+> *This is a simulated response from Big Pickle for development purposes.*`,
     }
 
     const text =

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, Outlet, useNavigate } from 'react-router-dom'
-import { Bot, LayoutDashboard, LogOut, Menu, MessageSquare, Settings, Sparkles, Waves, X } from 'lucide-react'
+import { Bot, ChevronLeft, Clock, LayoutDashboard, LogOut, Menu, MessageSquare, Settings, Sparkles, Waves, X } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
@@ -13,6 +13,7 @@ export function AppShell() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [conversations, setConversations] = useState<ConversationSummary[]>([])
   const [loadingConversations, setLoadingConversations] = useState(true)
   const [search, setSearch] = useState('')
@@ -145,6 +146,13 @@ export function AppShell() {
             </button>
             <Link
               className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              to="/routines"
+            >
+              <Clock className="h-4 w-4 text-lime-400" />
+              Routines
+            </Link>
+            <Link
+              className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               to="/settings"
             >
               <Settings className="h-4 w-4" />
@@ -219,6 +227,14 @@ export function AppShell() {
           </Link>
           <Link
             className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            to="/routines"
+            onClick={() => setSidebarOpen(false)}
+          >
+            <Clock className="h-4 w-4 text-lime-400" />
+            Routines
+          </Link>
+          <Link
+            className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             to="/settings"
             onClick={() => setSidebarOpen(false)}
           >
@@ -273,18 +289,33 @@ export function AppShell() {
       </aside>
 
       <div className="flex flex-1 overflow-hidden">
-        <aside className="hidden w-72 flex-col border-r border-border md:flex">
-          <ConversationList
-            conversations={conversations}
-            loading={loadingConversations}
-            onNew={handleNewCommissioning}
-            onNewChat={handleNewChat}
-            onDelete={handleDelete}
-            onRename={handleRename}
-            search={search}
-            onSearchChange={setSearch}
-          />
-        </aside>
+        <div className="relative hidden md:flex">
+          <aside
+            className={cn(
+              'flex-col border-r border-border transition-all duration-300 ease-in-out',
+              sidebarCollapsed ? 'w-0 overflow-hidden' : 'w-72',
+            )}
+          >
+            <ConversationList
+              conversations={conversations}
+              loading={loadingConversations}
+              onNew={handleNewCommissioning}
+              onNewChat={handleNewChat}
+              onDelete={handleDelete}
+              onRename={handleRename}
+              search={search}
+              onSearchChange={setSearch}
+            />
+          </aside>
+
+          <button
+            className="absolute -right-5 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-muted text-foreground shadow-md ring-1 ring-border transition-colors hover:bg-accent hover:text-accent-foreground"
+            onClick={() => setSidebarCollapsed((prev) => !prev)}
+            title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+          >
+            <ChevronLeft className={`h-5 w-5 transition-transform duration-300 ease-in-out ${sidebarCollapsed ? 'rotate-180' : ''}`} />
+          </button>
+        </div>
 
         <main className="relative flex-1 overflow-y-auto">
           <Outlet />

@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common'
 import { APP_GUARD } from '@nestjs/core'
+import { ScheduleModule } from '@nestjs/schedule'
 
 import { AiOrchestrationModule } from './ai-orchestration/ai-orchestration.module'
 import { AnalyticsModule } from './analytics/analytics.module'
@@ -18,12 +19,14 @@ import { MessagesModule } from './messages/messages.module'
 import { PrismaModule } from './prisma/prisma.module'
 import { ProviderCredentialsModule } from './provider-credentials/provider-credentials.module'
 import { ProvidersModule } from './providers/providers.module'
+import { RoutinesModule } from './routines/routines.module'
 import { StreamingModule } from './streaming/streaming.module'
 
 @Module({
   controllers: [AppController],
   imports: [
     PrismaModule,
+    ScheduleModule.forRoot(),
     HealthModule,
     AuthModule,
     AiOrchestrationModule,
@@ -36,6 +39,7 @@ import { StreamingModule } from './streaming/streaming.module'
       CompareStreamModule,
     AttachmentsModule,
     ProviderCredentialsModule,
+    RoutinesModule,
   ],
   providers: [
     AppService,

@@ -31,6 +31,7 @@ const PROVIDER_INFO: Record<string, { name: string; color: string; docs: string 
   OPENAI: { name: 'OpenAI (ChatGPT)', color: 'emerald', docs: 'https://platform.openai.com/api-keys' },
   ANTHROPIC: { name: 'Anthropic (Claude)', color: 'amber', docs: 'https://console.anthropic.com/settings/keys' },
   GOOGLE: { name: 'Google (Gemini)', color: 'cyan', docs: 'https://aistudio.google.com/app/apikey' },
+  BIG_PICKLE: { name: 'Big Pickle', color: 'lime', docs: 'https://aistudio.google.com/app/apikey' },
 }
 
 export default function SettingsPage() {
@@ -51,7 +52,7 @@ export default function SettingsPage() {
       setCredentials(creds)
 
       const healthResults = await Promise.allSettled(
-        ['OPENAI', 'ANTHROPIC', 'GOOGLE'].map((p) => checkCredentialHealth(p)),
+        ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'BIG_PICKLE'].map((p) => checkCredentialHealth(p)),
       )
       const health: Record<string, ProviderHealth> = {}
       for (const result of healthResults) {
@@ -121,7 +122,7 @@ export default function SettingsPage() {
     }
   }
 
-  const providers = ['OPENAI', 'ANTHROPIC', 'GOOGLE']
+  const providers = ['OPENAI', 'ANTHROPIC', 'GOOGLE', 'BIG_PICKLE']
 
   return (
     <motion.div

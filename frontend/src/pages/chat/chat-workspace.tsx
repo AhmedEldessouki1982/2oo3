@@ -25,7 +25,6 @@ import {
   type MessageBrief,
 } from '@/lib/api'
 
-const PROVIDERS = ['OPENAI', 'ANTHROPIC', 'GOOGLE']
 const PAGE_SIZE = 50
 
 export default function ChatWorkspacePage() {
@@ -52,6 +51,7 @@ export default function ChatWorkspacePage() {
   const eventSourceRef = useRef<EventSource | null>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const [userScrolledUp, setUserScrolledUp] = useState(false)
+  const [geminiMode, setGeminiMode] = useState<'GEMINI' | 'BIG_PICKLE'>('GEMINI')
 
   const isNearBottom = useCallback(() => {
     const el = scrollContainerRef.current
@@ -242,7 +242,7 @@ export default function ChatWorkspacePage() {
         attachmentIds.push(...uploads.map((u) => u.id))
       }
 
-      const result = await sendMessageApi(conversationId, content, attachmentIds)
+      const result = await sendMessageApi(conversationId, content, attachmentIds, geminiMode)
 
       const newMessage: MessageBrief = {
         id: result.message.id,
@@ -332,15 +332,44 @@ export default function ChatWorkspacePage() {
   const hasCompression = firstCompressedIdx >= 0
   const isChat = convType === 'CHAT'
 
+  const activeProviders = geminiMode === 'BIG_PICKLE'
+    ? ['OPENAI', 'ANTHROPIC', 'BIG_PICKLE']
+    : ['OPENAI', 'ANTHROPIC', 'GOOGLE']
+
   return (
     <div className="flex h-full flex-col">
       <div className="relative flex-1 overflow-y-auto" ref={scrollContainerRef}>
         <div className="mx-auto max-w-7xl space-y-6 px-4 py-6">
-          {hasComparisonData && (
-            <div className="flex justify-center">
+          <div className="flex items-center justify-center gap-4">
+            {hasComparisonData && (
               <ModeToggle onChange={setViewMode} value={viewMode} />
+            )}
+            <div className="flex items-center gap-1.5 rounded-full border border-border bg-card/50 px-3 py-1.5 text-xs font-medium">
+              <span className="text-muted-foreground">Google:</span>
+              <button
+                className={`rounded-full px-2.5 py-0.5 transition-colors ${
+                  geminiMode === 'GEMINI'
+                    ? 'bg-blue-500/20 text-blue-300'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={() => setGeminiMode('GEMINI')}
+                type="button"
+              >
+                Gemini
+              </button>
+              <button
+                className={`rounded-full px-2.5 py-0.5 transition-colors ${
+                  geminiMode === 'BIG_PICKLE'
+                    ? 'bg-lime-500/20 text-lime-300'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                onClick={() => setGeminiMode('BIG_PICKLE')}
+                type="button"
+              >
+                Big Pickle
+              </button>
             </div>
-          )}
+          </div>
 
           {attachments.length > 0 && (
             <div className="rounded-2xl border border-border bg-card/50 p-4">
@@ -463,7 +492,7 @@ export default function ChatWorkspacePage() {
 
                 {msg.role === 'USER' && viewMode !== 'consensus' && viewMode !== 'conflict' && (
                   <div className="grid gap-4 md:grid-cols-3">
-                    {PROVIDERS.map((provider) => {
+                    {activeProviders.map((provider) => {
                       const fromStore = msg.providerResponses?.find(
                         (r) => r.provider === provider,
                       )

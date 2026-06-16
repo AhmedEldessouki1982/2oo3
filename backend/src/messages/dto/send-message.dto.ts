@@ -1,4 +1,4 @@
-import { IsArray, IsOptional, IsString, MinLength } from 'class-validator'
+import { IsArray, IsEnum, IsOptional, IsString, MinLength } from 'class-validator'
 import { ApiPropertyOptional } from '@nestjs/swagger'
 
 export class SendMessageDto {
@@ -13,4 +13,9 @@ export class SendMessageDto {
   @IsArray()
   @IsString({ each: true })
   attachmentIds?: string[]
+
+  @ApiPropertyOptional({ enum: ['GEMINI', 'BIG_PICKLE'], example: 'GEMINI' })
+  @IsOptional()
+  @IsEnum(['GEMINI', 'BIG_PICKLE'])
+  geminiMode?: 'GEMINI' | 'BIG_PICKLE'
 }

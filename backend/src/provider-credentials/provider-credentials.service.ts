@@ -204,6 +204,13 @@ export class ProviderCredentialsService {
           )
           return res.ok
         }
+        case 'BIG_PICKLE': {
+          const res = await fetch('https://opencode.ai/zen/v1/models', {
+            headers: { Authorization: `Bearer ${apiKey}` },
+            signal: controller.signal,
+          })
+          return res.ok
+        }
         default:
           return false
       }
@@ -279,5 +286,17 @@ export class ProviderCredentialsService {
       }
     }
     return results
+  }
+
+  async findOneInternal(userId: string, provider: string) {
+    const credential = await this.prisma.providerCredential.findFirst({
+      where: { userId, provider: provider as Provider },
+    })
+    if (!credential) throw new NotFoundException(`Credential for ${provider} not found`)
+    return credential
+  }
+
+  async decryptKey(credential: { encryptedKeyMaterial: string }): Promise<string> {
+    return this.encryption.decrypt(credential.encryptedKeyMaterial)
   }
 }
